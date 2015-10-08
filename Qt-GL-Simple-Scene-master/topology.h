@@ -102,12 +102,13 @@ public:
     void clearTriangleBuffers();
     void clearQuadBuffers();
 
+    unsigned int addEdge(TopologyEdge edge);
     unsigned int addEdge(unsigned int pointId1, unsigned int pointId2);
     void removeEdge(unsigned int edgeId, unsigned int pointId=0);
     void setActiveEdge(unsigned int id);
     //void edge
 
-    unsigned int addPoint(TopologyPoint p);
+    unsigned int addPoint(TopologyPoint &p);
     void removePoint(unsigned int id);
     void setActivePoint(unsigned int id);
     void movePoint(unsigned int id, float posX, float posY, float posZ, float normX, float normY, float normZ);
@@ -119,8 +120,10 @@ public:
     void resetTopology();
 
     void testEdgeBorder(unsigned int edgeId);
+    void addTriangle(TopologyHelperTriangle triangle);
     void addTriangle(unsigned int edgeId, unsigned int pointId1, unsigned int pointId2, unsigned int pointId3);
     void removeTriangle(unsigned int id, unsigned int edgeId);
+    bool addQuad(TopologyHelperQuad quad);
     bool addQuad(unsigned int edgeId1, unsigned int pointId1, unsigned int pointId2, unsigned int pointId3, unsigned int pointId4);
     void removeQuad(unsigned int id, unsigned int edgeId);
 

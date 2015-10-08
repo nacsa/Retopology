@@ -42,7 +42,7 @@ void ProjectManager::saveProject(const std::string &path, const Topology &topolo
     outputFile.close();
 }
 
-void ProjectManager::openProject(const std::string &path, const Topology &topology)
+void ProjectManager::openProject(const std::string &path, Topology& topology)
 {
     ifstream inputFile;
     inputFile.open(path);
@@ -56,7 +56,7 @@ void ProjectManager::openProject(const std::string &path, const Topology &topolo
     std::istringstream iss;
     char c;
     int n, i;
-    unsigned int id, current_id, pointId1, pointId2, pointId3, pointId4;
+    unsigned int id, current_id, pointId1, pointId2, pointId3, pointId4, edgeId1, edgeId2, edgeId3, edgeId4;
     float posX, posY, posZ, normX, normY, normZ;
     //Read model path
     getline(inputFile, line);
@@ -89,23 +89,36 @@ void ProjectManager::openProject(const std::string &path, const Topology &topolo
         iss = istringstream(line);
         iss >> id >> pointId1 >> pointId2;
         TopologyEdge edge(id, pointId1, pointId2);
-
+        topology.addEdge(edge);
     }
 
-
-
-    while(getline(inputFile, line)){
-
-        std::istringstream iss(line);
-
-        //if(line.at(0) == 'e')
-          //  printf("\n \n van 'e' \n \n");
-
+    //Read triangles
+    getline(inputFile, line);
+    iss = istringstream(line);
+    iss >> c >> n >> current_id;
+    printf("read triangles: %d \n", n);
+    TopologyHelperTriangle::current_id = current_id;
+    for(i = 0; i < n; i++){
+        getline(inputFile, line);
+        iss = istringstream(line);
+        iss >> id >> pointId1 >> pointId2 >> pointId3 >> edgeId1 >> edgeId2 >> edgeId3;
+        TopologyHelperTriangle triangle(id, pointId1, pointId2, pointId3, edgeId1, edgeId2, edgeId3);
+        topology.addTriangle(triangle);
     }
-    // p
 
-
-
+    //Read quads
+    getline(inputFile, line);
+    iss = istringstream(line);
+    iss >> c >> n >> current_id;
+    printf("read quads: %d \n", n);
+    TopologyHelperQuad::current_id = current_id;
+    for(i = 0; i < n; i++){
+        getline(inputFile, line);
+        iss = istringstream(line);
+        iss >> id >> pointId1 >> pointId2 >> pointId3 >> pointId4 >> edgeId1 >> edgeId2 >> edgeId3 >> edgeId4;
+        TopologyHelperQuad quad(id, pointId1, pointId2, pointId3, pointId4, edgeId1, edgeId2, edgeId3, edgeId4);
+        topology.addQuad(quad);
+    }
 
 }
 

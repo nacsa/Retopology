@@ -87,6 +87,8 @@ void SimpleScene::initScene()
 
     cylinderNormalFrameBuffer = 0;
     cylinderPositionFrameBuffer = 0;
+    similarNormalFrameBuffer = 0;
+    similarPositionFrameBuffer = 0;
 
     positionFrameBuffer = 0;
     positionBackFaceFrameBuffer = 0;
@@ -157,7 +159,6 @@ void SimpleScene::initScene()
 
 void SimpleScene::loadModelFromFile(const char *fileName)
 {
-
     GLuint vertexSize = 3 * sizeof(GLfloat);
 
     ModelImporter importer;
@@ -199,6 +200,13 @@ void SimpleScene::saveProject(const char *fileName)
 void SimpleScene::openProject(const char *fileName)
 {
     projectManager.openProject(fileName, topology);
+
+    updatePointBuffers();
+    updateEdgeBuffers();
+    updateTriangleBuffers();
+    updateQuadBuffers();
+
+    printf("\n point size: %d", topology.newPoints.size());
 }
 
 void SimpleScene::update(float t)
@@ -984,7 +992,6 @@ void SimpleScene::clearEdgeSelection()
 
 
 
-
 bool SimpleScene::getSnapping() const
 {
     return snapping;
@@ -1005,6 +1012,28 @@ void SimpleScene::indicateSnappingPoint(int x, int y)
     snappingPointId = getSelectedPointId(x, glY);
 
 }
+
+
+void SimpleScene::projectToSimilarModel()
+{
+    std::set<unsigned int> pointIds = getSelectedPointsIds();
+    for(auto pointId : pointIds){
+        TopologyPoint projectingPoint = topology.newPoints[topology.pointIdToIndex(pointId)];
+        glm::mat4 viewMatrix = similarProj.getViewMatrix(projectingPoint);
+        glm::mat4 projectionMatrix = similarProj.getProjectionMatrix();
+
+        glm::vec3 newPosition = getPointPositionForSimilarProjection(width/2, height/2, viewMatrix, projectionMatrix);
+        glm::vec3 newNormal = getPointNormalForSimilarProjection(width/2, height/2, viewMatrix, projectionMatrix);
+
+        topology.movePoint(pointId, newPosition.x, newPosition.y, newPosition.z, newNormal.x, newNormal.y, newNormal.z);
+    }
+
+    updatePointBuffers();
+    updateEdgeBuffers();
+    updateTriangleBuffers();
+}
+
+
 
 void SimpleScene::projectTMPCylinder()
 {
@@ -1340,6 +1369,61 @@ glm::vec3 SimpleScene::getBackFacePointPosition(int x, int y)
     return glm::vec3(positionsk[0], positionsk[1], positionsk[2]);
 }
 
+glm::vec3 SimpleScene::getPointPositionForSimilarProjection(int x, int y, glm::mat4 &viewMatrix, glm::mat4 &projectionMatrix)
+{
+    similarPositionFrameBuffer->setRenderTarget();
+
+    newpoint_shader->enable();
+    newpoint_shader->bindUniformMatrixMat4("projection",projectionMatrix);//projection);
+    newpoint_shader->bindUniformMatrixMat4("modelview", viewMatrix);
+
+    glClearColor(0,0,0,0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glBindVertexArray(vaoHandle[0]);
+
+    glDrawElements(GL_TRIANGLES, nVertex, GL_UNSIGNED_INT, NULL);
+
+    glBindVertexArray(0);
+
+
+    glFlush();
+
+
+    static float* positionsk = new float[4];
+    glReadPixels(x,y,1,1, GL_RGBA, GL_FLOAT, positionsk);
+
+
+    newpoint_shader->disable();
+    similarPositionFrameBuffer->disableRenderTarget();
+
+    return glm::vec3(positionsk[0], positionsk[1], positionsk[2]);
+}
+
+glm::vec3 SimpleScene::getPointNormalForSimilarProjection(int x, int y, glm::mat4 &viewMatrix, glm::mat4 &projectionMatrix)
+{
+    similarNormalFrameBuffer->setRenderTarget();
+    pointnormal_shader->enable();
+    pointnormal_shader->bindUniformMatrixMat4("projection", projectionMatrix);//projection);
+    pointnormal_shader->bindUniformMatrixMat4("modelview", viewMatrix);
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glBindVertexArray(vaoHandle[0]);
+
+    glDrawElements(GL_TRIANGLES, nVertex, GL_UNSIGNED_INT, NULL);
+
+    glBindVertexArray(0);
+
+    glFlush();
+
+
+    static float* positionsk = new float[4];
+    glReadPixels(x,y,1,1, GL_RGBA, GL_FLOAT, positionsk);
+
+    pointnormal_shader->disable();
+    similarNormalFrameBuffer->disableRenderTarget();
+    return glm::vec3(positionsk[0], positionsk[1], positionsk[2]);
+}
+
 glm::vec3 SimpleScene::getPointPositionWithMatrix(int x, int y, glm::mat4 &modelMatrix)
 {
     cylinderPositionFrameBuffer->setRenderTarget();
@@ -1616,6 +1700,8 @@ void SimpleScene::deleteFrameBuffers()
 {
     delete cylinderNormalFrameBuffer;
     delete cylinderPositionFrameBuffer;
+    delete similarNormalFrameBuffer;
+    delete similarPositionFrameBuffer;
     delete positionFrameBuffer;
     delete positionBackFaceFrameBuffer;
     delete normalFrameBuffer;
@@ -1629,6 +1715,8 @@ void SimpleScene::createFrameBuffers(int width, int height)
 {
     cylinderNormalFrameBuffer = new Framebuffer(width, height, 1, false, true);
     cylinderPositionFrameBuffer = new Framebuffer(width, height, 1, false, true);
+    similarNormalFrameBuffer = new Framebuffer(width, height, 1, false, true);
+    similarPositionFrameBuffer = new Framebuffer(width, height, 1, false, true);
     positionFrameBuffer = new Framebuffer(width, height, 1, false, true);
     positionBackFaceFrameBuffer = new Framebuffer(width, height, 1, false, true);
     normalFrameBuffer = new Framebuffer(width, height, 1, false, true);

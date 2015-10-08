@@ -37,6 +37,7 @@ protected:
     bool lDown;
     bool mDown;
     bool oDown;
+    bool pDown;
     bool extrudeProcess;
     bool isMovingPoint;
     bool isDrawing;

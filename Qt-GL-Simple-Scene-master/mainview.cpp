@@ -24,6 +24,7 @@ MainView::MainView(const QGLFormat & format, QWidget *parent) : QGLWidget(format
     this->lDown = false;
     this->mDown = false;
     this->oDown = false;
+    this->pDown = false;
     this->extrudeProcess = false;
     this->isMovingPoint = false;
     this->isDrawing = false;
@@ -213,6 +214,9 @@ void MainView::keyPressEvent(QKeyEvent *event){
         updateGL();
     }else if(event->key() == Qt::Key_C){
         scene->clearEdgeSelection();
+        updateGL();
+    }else if(event->key() == Qt::Key_P){
+        scene->projectToSimilarModel();
         updateGL();
     }
 }

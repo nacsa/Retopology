@@ -1,6 +1,8 @@
 #ifndef TOPOLOGYIMPORTER_H
 #define TOPOLOGYIMPORTER_H
 
+#include<vector>
+
 class TopologyImporter
 {
 public:

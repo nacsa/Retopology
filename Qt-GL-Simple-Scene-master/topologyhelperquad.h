@@ -20,7 +20,7 @@ public:
     unsigned int edgeId3;
     unsigned int edgeId4;
 
-    TopologyHelperQuad(unsigned int id, unsigned i1,unsigned int i2,unsigned int i3,unsigned int i4);
+    TopologyHelperQuad(unsigned int id, unsigned i1,unsigned int i2,unsigned int i3,unsigned int i4, unsigned ei1,unsigned int ei2,unsigned int ei3,unsigned int ei4);
     TopologyHelperQuad(unsigned int i1,unsigned int i2,unsigned int i3,unsigned int i4);
 
     unsigned int getId();

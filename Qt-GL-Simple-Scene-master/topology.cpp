@@ -110,8 +110,8 @@ unsigned int Topology::addEdge(unsigned int pointId1, unsigned int pointId2){
         return 0;
     }
     TopologyEdge tmpEdge = TopologyEdge(pointId1, pointId2);
-    addEdge(tmpEdge);
-
+    return addEdge(tmpEdge);
+/*
     edges.push_back(tmpEdge);
 
     unsigned int index2 = pointIdToIndex(pointId2);
@@ -150,7 +150,7 @@ unsigned int Topology::addEdge(unsigned int pointId1, unsigned int pointId2){
     addBorderEdge(tmpEdge.getId());
 
     return tmpEdge.getId();
-
+*/
 }
 
 void Topology::removeEdge(unsigned int edgeId, unsigned int pointId){
@@ -220,7 +220,7 @@ void Topology::setActiveEdge(unsigned int id)
 
 }
 
-unsigned int Topology::addPoint(TopologyPoint p)
+unsigned int Topology::addPoint(TopologyPoint& p)
 {
     //arrayok karbantartasa
     newPoints.push_back(p);
@@ -419,6 +419,78 @@ void Topology::testEdgeBorder(unsigned int edgeId)
     }
 }
 
+void Topology::addTriangle(TopologyHelperTriangle triangle)
+{
+    unsigned int removeQuadId = 0;
+    int index1 = pointIdToIndex(triangle.pointId1);
+    int index2 = pointIdToIndex(triangle.pointId2);
+    int index3 = pointIdToIndex(triangle.pointId3);
+    int edgeIndex = edgeIdToIndex(triangle.edgeId1);
+    int edgeIndex2 = edgeIdToIndex(triangle.edgeId2);
+    int edgeIndex3 = edgeIdToIndex(triangle.edgeId3);
+
+
+    edges[edgeIndex].addNeighborTriangle(triangle.getId());
+    edges[edgeIndex2].addNeighborTriangle(triangle.getId());
+    edges[edgeIndex3].addNeighborTriangle(triangle.getId());
+
+
+    std::list<unsigned int>::iterator findIter;
+    for(std::list<unsigned int>::iterator it = edges[edgeIndex2].neighborQuads.begin(); it != edges[edgeIndex2].neighborQuads.end(); it++){
+        findIter = std::find(edges[edgeIndex3].neighborQuads.begin(), edges[edgeIndex3].neighborQuads.end(), (*it));
+        if(findIter != edges[edgeIndex3].neighborQuads.end()){ // van ilyen
+            removeQuadId = (*it);
+            break;
+        }
+    }/*
+    if(removeQuadId == 0){
+        for(std::list<unsigned int>::iterator it = edges[edgeIndex].neighborQuads.begin(); it != edges[edgeIndex].neighborQuads.end(); it++){
+            findIter = std::find(edges[edgeIndex2].neighborQuads.begin(), edges[edgeIndex2].neighborQuads.end(), (*it));
+            if(findIter != edges[edgeIndex2].neighborQuads.end()){ // van ilyen
+                removeQuadId = (*it);
+                break;
+            }
+        }
+    }*/
+
+    removeQuad(removeQuadId,0);
+
+
+    trianglePos.push_back(newPointsPos[index1*3]);
+    trianglePos.push_back(newPointsPos[index1*3+1]);
+    trianglePos.push_back(newPointsPos[index1*3+2]);
+    triangleNormal.push_back(newPointsNormal[index1*3]);
+    triangleNormal.push_back(newPointsNormal[index1*3+1]);
+    triangleNormal.push_back(newPointsNormal[index1*3+2]);
+
+    trianglePos.push_back(newPointsPos[index2*3]);
+    trianglePos.push_back(newPointsPos[index2*3+1]);
+    trianglePos.push_back(newPointsPos[index2*3+2]);
+    triangleNormal.push_back(newPointsNormal[index2*3]);
+    triangleNormal.push_back(newPointsNormal[index2*3+1]);
+    triangleNormal.push_back(newPointsNormal[index2*3+2]);
+
+    trianglePos.push_back(newPointsPos[index3*3]);
+    trianglePos.push_back(newPointsPos[index3*3+1]);
+    trianglePos.push_back(newPointsPos[index3*3+2]);
+    triangleNormal.push_back(newPointsNormal[index3*3]);
+    triangleNormal.push_back(newPointsNormal[index3*3+1]);
+    triangleNormal.push_back(newPointsNormal[index3*3+2]);
+
+
+
+    triangleId.push_back((float)triangle.getId());
+    triangleId.push_back((float)triangle.getId());
+    triangleId.push_back((float)triangle.getId());
+
+    testEdgeBorder(triangle.edgeId1);
+    testEdgeBorder(triangle.edgeId2);
+    testEdgeBorder(triangle.edgeId3);
+
+    triangles.push_back(triangle);
+    triangleId_index[triangle.getId()]=triangles.size()-1;
+}
+
 void Topology::addTriangle(unsigned int edgeId1, unsigned int pointId1, unsigned int pointId2, unsigned int pointId3)
 {
     int edgeIndex = edgeIdToIndex(edgeId1);
@@ -558,6 +630,80 @@ void Topology::removeTriangle(unsigned int id, unsigned int edgeId)
     for(int i = 0; i < triangles.size(); i++){
         triangleId_index[triangles[i].getId()]=i;
     }
+}
+
+bool Topology::addQuad(TopologyHelperQuad quad)
+{
+
+    int index1 = pointIdToIndex(quad.pointId1);
+    int index2 = pointIdToIndex(quad.pointId2);
+    int index3 = pointIdToIndex(quad.pointId3);
+    int index4 = pointIdToIndex(quad.pointId4);
+
+    int edgeIndex = edgeIdToIndex(quad.edgeId1);
+    int edgeIndex2 = edgeIdToIndex(quad.edgeId2);
+    int edgeIndex3 = edgeIdToIndex(quad.edgeId3);
+    int edgeIndex4 = edgeIdToIndex(quad.edgeId4);
+
+    std::list<unsigned int>::iterator findIter;
+
+    //ha 2 oldal a 4ből azonos 3szögben vagy 4szögben van akkor nem vesszük fel.
+    for(std::list<unsigned int>::iterator it = edges[edgeIndex].neighborTriangles.begin(); it != edges[edgeIndex].neighborTriangles.end(); it++){
+        findIter = std::find(edges[edgeIndex2].neighborTriangles.begin(), edges[edgeIndex2].neighborTriangles.end(), (*it));
+        if(findIter != edges[edgeIndex2].neighborTriangles.end()){ // van ilyen
+            //Add triangle
+            return false;
+        }
+        findIter = std::find(edges[edgeIndex3].neighborTriangles.begin(), edges[edgeIndex3].neighborTriangles.end(), (*it));
+        if(findIter != edges[edgeIndex3].neighborTriangles.end()){ // van ilyen
+            //Add triangle
+            return false;
+        }
+    }
+    for(std::list<unsigned int>::iterator it = edges[edgeIndex4].neighborTriangles.begin(); it != edges[edgeIndex4].neighborTriangles.end(); it++){
+        findIter = std::find(edges[edgeIndex2].neighborTriangles.begin(), edges[edgeIndex2].neighborTriangles.end(), (*it));
+        if(findIter != edges[edgeIndex2].neighborTriangles.end()){ // van ilyen
+            //Add triangle
+            return false;
+        }
+        findIter = std::find(edges[edgeIndex3].neighborTriangles.begin(), edges[edgeIndex3].neighborTriangles.end(), (*it));
+        if(findIter != edges[edgeIndex3].neighborTriangles.end()){ // van ilyen
+            //Add triangle
+            return false;
+        }
+    }
+    for(std::list<unsigned int>::iterator it = edges[edgeIndex4].neighborTriangles.begin(); it != edges[edgeIndex4].neighborTriangles.end(); it++){
+       findIter = std::find(edges[edgeIndex].neighborTriangles.begin(), edges[edgeIndex].neighborTriangles.end(), (*it));
+        if(findIter != edges[edgeIndex].neighborTriangles.end()){ // van ilyen
+            //Add triangle
+            return false;
+        }
+    }
+
+
+
+
+
+    //ha minden ok
+
+    quads.push_back(quad);
+
+    edges[edgeIndex].addNeighborQuad(quad.getId());
+    edges[edgeIndex2].addNeighborQuad(quad.getId());
+    edges[edgeIndex3].addNeighborQuad(quad.getId());
+    edges[edgeIndex4].addNeighborQuad(quad.getId());
+    quadIndices.push_back(index1);
+    quadIndices.push_back(index2);
+    quadIndices.push_back(index4);
+    quadIndices.push_back(index3);
+
+    testEdgeBorder(quad.edgeId1);
+    testEdgeBorder(quad.edgeId2);
+    testEdgeBorder(quad.edgeId3);
+    testEdgeBorder(quad.edgeId4);
+
+    quadId_index[quad.getId()]=quads.size()-1;
+    return true;
 }
 
 bool Topology::addQuad(unsigned int edgeId1, unsigned int pointId1, unsigned int pointId2, unsigned int pointId3, unsigned int pointId4)

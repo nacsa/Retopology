@@ -16,6 +16,7 @@
 #include "cylinderprojection.h"
 #include "linearregressor.h"
 #include "selectionrectangle.h"
+#include "similarmodelprojection.h"
 
 class SimpleScene : public Scene
 {
@@ -56,6 +57,8 @@ private:
 
     Framebuffer* cylinderPositionFrameBuffer;
     Framebuffer* cylinderNormalFrameBuffer;
+    Framebuffer* similarPositionFrameBuffer;
+    Framebuffer* similarNormalFrameBuffer;
 
     Framebuffer* positionBuffer;
     Framebuffer* positionFrameBuffer;
@@ -75,6 +78,7 @@ private:
 
     Topology topology;
     CylinderProjection cylinderProj;
+    SimilarModelProjection similarProj;
     SelectionRectangle selectionRectangle;
 
 
@@ -111,6 +115,8 @@ private:
     glm::vec3 getBackFacePointPosition(int x, int y);
     glm::vec3 getPointPositionWithMatrix(int x, int y, glm::mat4& modelMatrix);
     glm::vec3 getPointNormalWithMatrix(int x, int y, glm::mat4& modelMatrix);
+    glm::vec3 getPointPositionForSimilarProjection(int x, int y, glm::mat4& viewMatrix, glm::mat4& projectionMatrix);
+    glm::vec3 getPointNormalForSimilarProjection(int x, int y, glm::mat4& viewMatrix, glm::mat4& projectionMatrix);
     std::vector<glm::vec3> getPointDataViaCylinderShader( bool outputType);
 
     std::vector<glm::vec3> getLineStartAndEndPoint(std::list<glm::vec3> points);
@@ -182,6 +188,8 @@ public:
     void selectBorderEdges();
     void selectBorderEdgeLine(int x, int y);
     void clearEdgeSelection();
+
+    void projectToSimilarModel();
 
     //haxx
 

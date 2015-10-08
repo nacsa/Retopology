@@ -30,7 +30,7 @@ class ProjectManager
 public:
     ProjectManager();
     void saveProject(const std::string &path, const Topology &topology);
-    void openProject(const std::string &path, const Topology &topology);
+    void openProject(const std::string &path, Topology &topology);
     void setModelPath(std::string path);
 };
 

@@ -27,7 +27,8 @@ SOURCES += main.cpp \
     cylinderprojection.cpp \
     linearregressor.cpp \
     selectionrectangle.cpp \
-    topologyimporter.cpp
+    topologyimporter.cpp \
+    similarmodelprojection.cpp
 
 HEADERS += \
     mainview.h \
@@ -49,7 +50,8 @@ HEADERS += \
     cylinderprojection.h \
     linearregressor.h \
     selectionrectangle.h \
-    topologyimporter.h
+    topologyimporter.h \
+    similarmodelprojection.h
 
 OTHER_FILES += \
     fragment.glsl \
