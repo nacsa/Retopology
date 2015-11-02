@@ -29,6 +29,7 @@ protected:
     bool altDown;
     bool shiftDown;
     bool qDown;
+    bool iDown;
     bool sDown;
     bool dDown;
     bool eDown;

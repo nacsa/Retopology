@@ -78,6 +78,11 @@ void SimpleScene::initScene()
     cylinderProjection_shader = new Shader("D:\\msconlab\\Qt-GL-Simple-Scene-master\\cylinderproj_vertex.glsl",
                                 "D:\\msconlab\\Qt-GL-Simple-Scene-master\\cylinderproj_fragment.glsl",
                                 "D:\\msconlab\\Qt-GL-Simple-Scene-master\\cylinderproj_geometry.glsl");
+    similarModelProjectionPosition_shader = new Shader("D:\\msconlab\\Qt-GL-Simple-Scene-master\\similarmodelposproj_vertex.glsl",
+                                "D:\\msconlab\\Qt-GL-Simple-Scene-master\\similarmodelposproj_fragment.glsl");
+
+    similarModelProjectionNormal_shader = new Shader("D:\\msconlab\\Qt-GL-Simple-Scene-master\\similarmodelnormproj_vertex.glsl",
+                                "D:\\msconlab\\Qt-GL-Simple-Scene-master\\similarmodelnormproj_fragment.glsl");
 
 
     //width = 890;
@@ -956,6 +961,43 @@ void SimpleScene::moveExtrudablePoint(int x, int y)
 
 }
 
+void SimpleScene::selectPointIsland(int x, int y)
+{
+    int glY = height - y;
+    unsigned int pointId = getSelectedPointId(x,glY);
+    if(pointId != 0){
+        pointIslandSelectionPoints.clear();
+        selectPointIslandAroundPoint(pointId);
+    }else{
+        unsigned int edgeId = getSelectedEdgeId(x,glY);
+        if(edgeId == 0){
+            return;
+        }
+        TopologyEdge edge = topology.edges[topology.edgeIdToIndex(edgeId)];
+        pointIslandSelectionPoints.clear();
+        selectPointIslandAroundPoint(edge.pointId1);
+    }
+    topology.clearActivePoint();
+    for(auto selectedPointId : pointIslandSelectionPoints){
+        topology.addActivePoint(selectedPointId);
+    }
+
+    updatePointBuffers();
+    updateEdgeBuffers();
+}
+
+void SimpleScene::selectPointIslandAroundPoint(unsigned int pointId)
+{
+    TopologyPoint point = topology.newPoints[topology.pointIdToIndex(pointId)];
+    pointIslandSelectionPoints.insert(pointId);
+
+    for(auto neighborPointId : point.neighborPoints){
+        if(pointIslandSelectionPoints.find(neighborPointId) == pointIslandSelectionPoints.end()){
+            selectPointIslandAroundPoint(neighborPointId);
+        }
+    }
+}
+
 void SimpleScene::selectBorderEdges()
 {
 
@@ -1373,9 +1415,9 @@ glm::vec3 SimpleScene::getPointPositionForSimilarProjection(int x, int y, glm::m
 {
     similarPositionFrameBuffer->setRenderTarget();
 
-    newpoint_shader->enable();
-    newpoint_shader->bindUniformMatrixMat4("projection",projectionMatrix);//projection);
-    newpoint_shader->bindUniformMatrixMat4("modelview", viewMatrix);
+    similarModelProjectionPosition_shader->enable();
+    similarModelProjectionPosition_shader->bindUniformMatrixMat4("projection",projectionMatrix);//projection);
+    similarModelProjectionPosition_shader->bindUniformMatrixMat4("modelview", viewMatrix);
 
     glClearColor(0,0,0,0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1393,7 +1435,7 @@ glm::vec3 SimpleScene::getPointPositionForSimilarProjection(int x, int y, glm::m
     glReadPixels(x,y,1,1, GL_RGBA, GL_FLOAT, positionsk);
 
 
-    newpoint_shader->disable();
+    similarModelProjectionPosition_shader->disable();
     similarPositionFrameBuffer->disableRenderTarget();
 
     return glm::vec3(positionsk[0], positionsk[1], positionsk[2]);
@@ -1402,9 +1444,9 @@ glm::vec3 SimpleScene::getPointPositionForSimilarProjection(int x, int y, glm::m
 glm::vec3 SimpleScene::getPointNormalForSimilarProjection(int x, int y, glm::mat4 &viewMatrix, glm::mat4 &projectionMatrix)
 {
     similarNormalFrameBuffer->setRenderTarget();
-    pointnormal_shader->enable();
-    pointnormal_shader->bindUniformMatrixMat4("projection", projectionMatrix);//projection);
-    pointnormal_shader->bindUniformMatrixMat4("modelview", viewMatrix);
+    similarModelProjectionNormal_shader->enable();
+    similarModelProjectionNormal_shader->bindUniformMatrixMat4("projection", projectionMatrix);//projection);
+    similarModelProjectionNormal_shader->bindUniformMatrixMat4("modelview", viewMatrix);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glBindVertexArray(vaoHandle[0]);
@@ -1419,7 +1461,7 @@ glm::vec3 SimpleScene::getPointNormalForSimilarProjection(int x, int y, glm::mat
     static float* positionsk = new float[4];
     glReadPixels(x,y,1,1, GL_RGBA, GL_FLOAT, positionsk);
 
-    pointnormal_shader->disable();
+    similarModelProjectionNormal_shader->disable();
     similarNormalFrameBuffer->disableRenderTarget();
     return glm::vec3(positionsk[0], positionsk[1], positionsk[2]);
 }

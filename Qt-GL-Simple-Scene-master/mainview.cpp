@@ -25,6 +25,7 @@ MainView::MainView(const QGLFormat & format, QWidget *parent) : QGLWidget(format
     this->mDown = false;
     this->oDown = false;
     this->pDown = false;
+    this->iDown = false;
     this->extrudeProcess = false;
     this->isMovingPoint = false;
     this->isDrawing = false;
@@ -115,6 +116,8 @@ void MainView::mousePressEvent(QMouseEvent *event){
         }else if(oDown){
             isRectSelecting = true;
             scene->startRectangleSelection(event->pos().x(), event->pos().y());
+        }else if(iDown){
+            scene->selectPointIsland(event->pos().x(), event->pos().y());
         }else{
             scene->makeNewPoint(event->pos().x(), event->pos().y());
         }
@@ -218,6 +221,8 @@ void MainView::keyPressEvent(QKeyEvent *event){
     }else if(event->key() == Qt::Key_P){
         scene->projectToSimilarModel();
         updateGL();
+    }else if(event->key() == Qt::Key_I){
+        iDown = true;
     }
 }
 
@@ -246,6 +251,8 @@ void MainView::keyReleaseEvent(QKeyEvent *event){
         lDown = false;
     }else if(event->key() == Qt::Key_O){
         oDown = false;
+    }else if(event->key() == Qt::Key_I){
+        iDown = false;
     }else if(event->key()== Qt::Key_Delete){
         scene->removeActivePoint();
         scene->removeActiveEdge();

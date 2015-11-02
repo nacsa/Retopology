@@ -80,7 +80,12 @@ OTHER_FILES += \
     cylinderproj_geometry.glsl \
     cylinderproj_vertex.glsl \
     selectrect_fragment.glsl \
-    selectrect_vertex.glsl
+    selectrect_vertex.glsl \
+    similarmodelposproj_fragment.glsl \
+    similarmodelposproj_vertex.glsl \
+    similarmodelnormproj_fragment.glsl \
+    similarmodelnormproj_vertex.glsl
+
 
 
 INCLUDEPATH += ./include/Assimp/include/assimp

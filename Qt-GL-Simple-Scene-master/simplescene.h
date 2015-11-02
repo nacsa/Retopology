@@ -51,6 +51,8 @@ private:
     Shader* triangle_shader;
     Shader* triangleid_shader;
     Shader* cylinderProjection_shader;
+    Shader* similarModelProjectionPosition_shader;
+    Shader* similarModelProjectionNormal_shader;
     glm::mat4 projection, modelview, rotationMatrix;
     glm::mat3 normalmatrix;
     glm::vec3 lightPosition;
@@ -96,6 +98,7 @@ private:
     int extrudeInitX;
     int extrudeInitY;
 
+    std::set<unsigned int> pointIslandSelectionPoints;
 
     bool snapping;
     unsigned int snappingPointId;
@@ -184,6 +187,9 @@ public:
     void stopExtrude();
 
     void moveExtrudablePoint(int x, int y);
+
+    void selectPointIsland(int x, int y);
+    void selectPointIslandAroundPoint(unsigned int pointId);
 
     void selectBorderEdges();
     void selectBorderEdgeLine(int x, int y);
