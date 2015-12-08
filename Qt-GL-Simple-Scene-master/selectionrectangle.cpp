@@ -16,11 +16,10 @@ void SelectionRectangle::bindBufferData()
     glEnableVertexAttribArray(0); //pos
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertexSize, 0);
 
-
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indicesBuffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices, GL_STATIC_DRAW);
-
     glBindVertexArray(0);
+   // glDisableVertexAttribArray(0);
 }
 
 void SelectionRectangle::bindCoordinates()

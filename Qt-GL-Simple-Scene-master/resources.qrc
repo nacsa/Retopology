@@ -1,0 +1,23 @@
+<RCC>
+    <qresource prefix="/">
+        <file alias="butIcon">icons/alignLeft.png</file>
+        <file alias="singlePointSel">icons/single_point_selection.png</file>
+        <file alias="multiPointSel">icons/multiple_point_selection.png</file>
+        <file alias="cylinderProj">icons/cylinder_projection.png</file>
+        <file alias="edgeAdd">icons/edge_add.png</file>
+        <file alias="edgeDivide">icons/edge_divide.png</file>
+        <file alias="edgeExtrude">icons/edge_extrude.png</file>
+        <file alias="manipulatorRotate">icons/manipulator_rotate.png</file>
+        <file alias="manipulatorScale">icons/manipulator_scale.png</file>
+        <file alias="manipulatorTranslate">icons/manipulator_translate.png</file>
+        <file alias="multiEdgeSel">icons/multiple_edge_selection.png</file>
+        <file alias="pointAdd">icons/point_add.png</file>
+        <file alias="pointAddAuto">icons/point_add_autoedge.png</file>
+        <file alias="quadSel">icons/quad_selection.png</file>
+        <file alias="similarProj">icons/similar_projection.png</file>
+        <file alias="singleEdgeSel">icons/single_edge_selection.png</file>
+        <file alias="triangleDivide">icons/triangle_divide.png</file>
+        <file alias="triangleSel">icons/triangle_selection.png</file>
+        <file alias="selectArrow">icons/select_arrow.png</file>
+    </qresource>
+</RCC>

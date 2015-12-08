@@ -28,7 +28,22 @@ SOURCES += main.cpp \
     linearregressor.cpp \
     selectionrectangle.cpp \
     topologyimporter.cpp \
-    similarmodelprojection.cpp
+    similarmodelprojection.cpp \
+    circlegenerator.cpp \
+    cylindergenerator.cpp \
+    vertexisland.cpp \
+    libgizmo/GizmoTransformMove.cpp \
+    libgizmo/GizmoTransformRender.cpp \
+    libgizmo/GizmoTransformRotate.cpp \
+    libgizmo/GizmoTransformScale.cpp \
+    libgizmo/stdafx.cpp \
+    libgizmo/ZBaseMaths.cpp \
+    libgizmo/ZMathsFunc.cpp \
+    modeltoretopo.cpp \
+    constraintprojection.cpp \
+    constraintpoint.cpp \
+    MeshMorph.cpp
+
 
 HEADERS += \
     mainview.h \
@@ -51,7 +66,32 @@ HEADERS += \
     linearregressor.h \
     selectionrectangle.h \
     topologyimporter.h \
-    similarmodelprojection.h
+    similarmodelprojection.h \
+    circlegenerator.h \
+    cylindergenerator.h \
+    vertexisland.h \
+    libgizmo/IGizmo.h \
+    libgizmo/GizmoTransform.h \
+    libgizmo/GizmoTransformMove.h \
+    libgizmo/GizmoTransformRender.h \
+    libgizmo/GizmoTransformRotate.h \
+    libgizmo/GizmoTransformScale.h \
+    libgizmo/LibBase.h \
+    libgizmo/stdafx.h \
+    libgizmo/targetver.h \
+    libgizmo/ZBaseDefs.h \
+    libgizmo/ZBaseMaths.h \
+    libgizmo/ZBaseMaths.inl \
+    libgizmo/ZCollisionsUtils.h \
+    libgizmo/ZMathsFunc.h \
+    UserToolState.h \
+    modeltoretopo.h \
+    constraintprojection.h \
+    constraintpoint.h \
+    MeshMorph.h
+
+RESOURCES += \
+    resources.qrc
 
 OTHER_FILES += \
     fragment.glsl \
@@ -84,15 +124,25 @@ OTHER_FILES += \
     similarmodelposproj_fragment.glsl \
     similarmodelposproj_vertex.glsl \
     similarmodelnormproj_fragment.glsl \
-    similarmodelnormproj_vertex.glsl
+    similarmodelnormproj_vertex.glsl \
+    constraintproj_fragment.glsl \
+    constraintproj_geometry.glsl \
+    constraintproj_vertex.glsl
 
 
 
 INCLUDEPATH += ./include/Assimp/include/assimp
 INCLUDEPATH +=  D:/msconlab/Qt-GL-Simple-Scene-master/include/Assimp/include/assimp
+INCLUDEPATH +=  "D:\Programok\boost_1_5\include"
 
 LIBS += -L$$PWD/include/Assimp/lib/x64/ -lassimp
+LIBS += -L$$PWD/include/LibGizmo/lib -lgizmo
 
 
 INCLUDEPATH += $$PWD/include/Assimp/include/assimp
+INCLUDEPATH += $$PWD/include/LibGizmo/include
+INCLUDEPATH += $$PWD/include/boost_1_5/include/
+
 DEPENDPATH += $$PWD/include/Assimp/include/assimp
+DEPENDPATH += $$PWD/include/LibGizmo/include
+DEPENDPATH += $$PWD/include/boost_1_5/include

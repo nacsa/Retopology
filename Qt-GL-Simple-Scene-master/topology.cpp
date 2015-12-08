@@ -8,6 +8,7 @@ Topology::Topology()
     pointNormalBuffer=0;
     pointIdBuffer=0;
     pointActiveBuffer=0;
+    pointConstraintProjBuffer = 0;
 
     edgeVertexBuffer=0;
     edgeNormalBuffer=0;
@@ -234,6 +235,7 @@ unsigned int Topology::addPoint(TopologyPoint& p)
 
     newPointsId.push_back((float)p.getId());
     newPointsActive.push_back(0.0);
+    newPointsConstraintProj.push_back(0.0);
 
     pointId_index[p.getId()]=newPoints.size()-1;
 
@@ -258,6 +260,7 @@ void Topology::removePoint(unsigned int id)
     newPointsNormal.erase(newPointsNormal.begin()+pointIndex*3,newPointsNormal.begin()+pointIndex*3+3);
     newPointsId.erase(newPointsId.begin()+pointIndex);
     newPointsActive.erase(newPointsActive.begin()+pointIndex);
+    newPointsConstraintProj.erase(newPointsConstraintProj.begin()+pointIndex);
     newPoints.erase(newPoints.begin()+pointIndex);
 
     //id to index
@@ -382,8 +385,56 @@ void Topology::movePoint(unsigned int id, float posX, float posY, float posZ, fl
 
 }
 
+void Topology::movePoint(unsigned int id, float posX, float posY, float posZ)
+{
+    int index = pointIdToIndex(id);
+    newPoints[index].setPosition(posX,posY,posZ);
+    newPointsPos[index*3] = posX;
+    newPointsPos[index*3+1] = posY;
+    newPointsPos[index*3+2] = posZ;
+
+    int edgeIx;
+    int triangleIx;
+    std::list<unsigned int>::iterator edgeIt;
+    for(std::list<unsigned int>::iterator it = newPoints[index].neighborEdges.begin(); it != newPoints[index].neighborEdges.end(); it++){
+        edgeIx = edgeIdToIndex(*it);
+        if(edges[edgeIx].pointId1 == id)
+        {
+            newEdgePos[edgeIx*6] = posX;
+            newEdgePos[edgeIx*6+1] = posY;
+            newEdgePos[edgeIx*6+2] = posZ;
+        }else if(edges[edgeIx].pointId2 == id){
+            newEdgePos[edgeIx*6+3] = posX;
+            newEdgePos[edgeIx*6+4] = posY;
+            newEdgePos[edgeIx*6+5] = posZ;
+        }
+        for(edgeIt = edges[edgeIx].neighborTriangles.begin(); edgeIt != edges[edgeIx].neighborTriangles.end();edgeIt++){
+            triangleIx = triangleIdToIndex(*edgeIt);
+            if(triangles[triangleIx].pointId1 == id)
+            {
+                trianglePos[triangleIx*9] = posX;
+                trianglePos[triangleIx*9+1] = posY;
+                trianglePos[triangleIx*9+2] = posZ;
+            }else if(triangles[triangleIx].pointId2 == id)
+            {
+                trianglePos[triangleIx*9+3] = posX;
+                trianglePos[triangleIx*9+4] = posY;
+                trianglePos[triangleIx*9+5] = posZ;
+            } else if(triangles[triangleIx].pointId3 == id)
+            {
+                trianglePos[triangleIx*9+6] = posX;
+                trianglePos[triangleIx*9+7] = posY;
+                trianglePos[triangleIx*9+8] = posZ;
+            }
+        }
+    }
+}
+
 int Topology::pointIdToIndex(unsigned int id)
 {
+    for(auto pointId : pointId_index){
+        printf("\n** %d - %d", pointId.first, pointId.second);
+    }
     return pointId_index[id];
 }
 
@@ -1176,6 +1227,16 @@ unsigned int Topology::getRandomActivePoint()
     return (*activePoints.begin());
 }
 
+void Topology::addConstraintProjPoint(unsigned int pointId)
+{
+    newPointsConstraintProj[pointIdToIndex(pointId)] = 1.0;
+}
+
+void Topology::removeConstraintProjPoint(unsigned int pointId)
+{
+    newPointsConstraintProj[pointIdToIndex(pointId)] = 0.0;
+}
+
 void Topology::addActiveEdge(unsigned int edgeId)
 {
     //if(activePointId!=0){
@@ -1325,6 +1386,46 @@ void Topology::setBorderEdgesActive()
 
 }
 
+void Topology::saveState()
+{
+    newPointsPosSave = newPointsPos;
+    newPointsNormalSave = newPointsNormal;
+    newPointsSave = newPoints;
+    newEdgePosSave = newEdgePos;
+    newEdgeNormalSave = newEdgeNormal;
+    edgesSave = edges;
+    trianglePosSave = trianglePos;
+    triangleNormalSave = triangleNormal;
+    trianglesSave = triangles;
+    /*
+    newPointsPosSave.resize(newPointsPos.size());
+    std::copy(newPointsPos.begin(), newPointsPos.end(), newPointsPosSave);
+    newPointsNormalSave.resize(newPointsNormal.size());
+    std::copy(newPointsNormal.begin(), newPointsNormal.end(), newPointsNormalSave);
+    newEdgePosSave.resize(newEdgePos.size());
+    std::copy(newEdgePos.begin(), newEdgePos.end(), newEdgePosSave);
+    newEdgeNormalSave.resize(newEdgeNormal.size());
+    std::copy(newEdgeNormal.begin(), newEdgeNormal.end(), newEdgeNormalSave);
+    trianglePosSave.resize(trianglePos.size());
+    std::copy(trianglePos.begin(), trianglePos.end(), trianglePosSave);
+    triangleNormalSave.resize(triangleNormal.size());
+    std::copy(triangleNormal.begin(), triangleNormal.end(), triangleNormalSave);
+    */
+}
+
+void Topology::loadState()
+{
+    newPointsPos = newPointsPosSave;
+    newPointsNormal = newPointsNormalSave;
+    newPoints = newPointsSave;
+    newEdgePos = newEdgePosSave;
+    newEdgeNormal = newEdgeNormalSave;
+    edges = edgesSave;
+    trianglePos = trianglePosSave;
+    triangleNormal = triangleNormalSave;
+    triangles = trianglesSave;
+}
+
 
 
 
@@ -1375,6 +1476,13 @@ void Topology::bindPointBuffers(GLuint vaoHandle){
     glBufferData(GL_ARRAY_BUFFER, newPointsActive.size() * sizeof(float), &newPointsActive[0], GL_STATIC_DRAW);
     glEnableVertexAttribArray(3); //active
     glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT), 0);
+
+    if(pointConstraintProjBuffer == 0)
+        glGenBuffers(1, &pointConstraintProjBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, pointConstraintProjBuffer);
+    glBufferData(GL_ARRAY_BUFFER, newPointsConstraintProj.size() * sizeof(float), &newPointsConstraintProj[0], GL_STATIC_DRAW);
+    glEnableVertexAttribArray(4); //already has point
+    glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT), 0);
 
     glBindVertexArray(0);
 }
@@ -1538,6 +1646,8 @@ void Topology::clearPointBuffers()
     pointIdBuffer=0;
     glDeleteBuffers(1,&pointActiveBuffer);
     pointActiveBuffer=0;
+    glDeleteBuffers(1,&pointConstraintProjBuffer);
+    pointConstraintProjBuffer=0;
 }
 
 void Topology::clearEdgeBuffers(){
@@ -1584,6 +1694,7 @@ void Topology::resetTopology()
     newPointsNormal.clear();
     newPointsId.clear();
     newPointsActive.clear();
+    newPointsConstraintProj.clear();
 
    // activeEdgeId=0;
     clearActiveEdge();

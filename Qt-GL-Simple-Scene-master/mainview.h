@@ -10,6 +10,17 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "simplescene.h"
+#include "UserToolState.h"
+
+enum CylinderProjState{
+    PPPPP,
+    SSSSSSS
+};
+
+enum ConstraintProjState{
+    MAKE_CONSTRAINTS,
+    APPLIED,
+};
 
 class MainView : public QGLWidget
 {
@@ -18,6 +29,8 @@ class MainView : public QGLWidget
 private:
     QTimer *timer;
     SimpleScene *scene;
+    UserToolState currentToolState;
+    ConstraintProjState constraintProjState;
 
 public:
     MainView( const QGLFormat & format, QWidget *parent = 0 );
@@ -46,6 +59,12 @@ protected:
     float oldMousePosX;
     float oldMousePosY;
 
+    //stateM
+    bool isRadiusSelection;
+    bool isHorizontalSelection;
+    bool isVerticalSelection;
+    float selectionBuffer;
+
     void initializeGL();
     void paintGL();
     void resizeGL(int w, int h);
@@ -65,10 +84,14 @@ public slots:
     void loadModelFromFile(const char* fileName);
     void saveProject(const char* fileName);
     void openProject(const char* fileName);
+    void importModel(const char* fileName);
 
     //tool
     void cylinderProj();
     void linearReg();
+    void projectToSurface();
+    void constraintProjection();
+    void changeState(UserToolState state);
 };
 
 #endif // MAINVIEW_H

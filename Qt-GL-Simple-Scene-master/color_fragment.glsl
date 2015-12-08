@@ -6,10 +6,12 @@ in vec2 TexCoord;
 in float active;
 in float seeAble;
 in float pId;
+in float constraintProj;
 in vec4 wpos;
 //uniform vec3 pColor;
 
 uniform float snappingId;
+uniform float activeConstraintId;
 uniform sampler2D gTexNormal;
 uniform sampler2D gTexActive;
 
@@ -21,8 +23,11 @@ void main (void)
     }
     if(pId < snappingId + 0.5f && pId > snappingId - 0.5f){
         fragColor = vec4(0.9,0.4,0.4,1.0);
-    }
-    else if(active < 0.5){
+    }else if(pId < activeConstraintId + 0.5f && pId > activeConstraintId - 0.5f){
+        fragColor = vec4(0.9,0.4,0.4,1.0);
+    }else if (constraintProj > 0.5){
+        fragColor = vec4(0.4,0.9,0.4,1.0);
+	}else if(active < 0.5){
         fragColor = vec4(0.9,0.9,0.0,1.0);
     }else{
         fragColor = vec4(1.0,1.0,1.0, 1.0);

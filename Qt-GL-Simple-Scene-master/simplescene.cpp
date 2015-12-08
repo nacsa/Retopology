@@ -1,9 +1,9 @@
 #include "simplescene.h"
 #include "modelimporter.h"
+#include "modeltoretopo.h"
 #include <iostream>
 #include <Assimp/include/assimp/Importer.hpp>
-
-
+#include <glm/gtc/type_ptr.hpp>
 
 
 /*
@@ -21,6 +21,9 @@
     * háromszögesítés(vagy saját formátum)->exportálás !!fontos
 */
 
+float identitymatrix[16] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,1.0f };
+float identitymatrix2[16] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,0.0f };
+float objectMatrix[16]={-0.3210,0.0000,0.9471,0.0000,0.0000,1.0000,0.0000,0.0000,-0.9471,0.0000,-0.3210,0.0000,-137.1790,16.4949,375.4003,1.0000};
 
 SimpleScene::SimpleScene()
 {
@@ -111,6 +114,23 @@ void SimpleScene::initScene()
     sUpdateEdgeIdFB = true;
     sUpdateTriangleIdFB = true;
 
+    gizmoMove = CreateMoveGizmo();
+    gizmoRotate = CreateRotateGizmo();
+    gizmoScale = CreateScaleGizmo();
+    gizmoMove->SetEditMatrix( identitymatrix );
+    gizmoScale->SetEditMatrix( identitymatrix );
+    gizmoRotate->SetEditMatrix( identitymatrix );
+    gizmoMove->SetDisplayScale( 1.f );
+    gizmoRotate->SetDisplayScale( 1.f );
+    gizmoScale->SetDisplayScale( 1.f );
+    isGizmoMoving = false;
+    showMoveGizmo = false;
+    isGizmoRotating = false;
+    showRotateGizmo = false;
+    isGizmoScaling = false;
+    showScaleGizmo = false;
+
+    vertexIsland = VertexIsland(&topology);
     // Z order buffering
     //glEnable(GL_DEPTH_TEST);
    // glDepthFunc(GL_LESS);
@@ -134,12 +154,16 @@ void SimpleScene::initScene()
 
 
 
-    glGenVertexArrays(6, vaoHandle);
+    glGenVertexArrays(9, vaoHandle);
 
     //newPoints = new float[nVertex*3];
 
+    //TODO: manipulator utkozik vele
     selectionRectangle.init(vaoHandle[5]);
+    circleGenerator.init(vaoHandle[6]);
+    cylinderGenerator.init(&circleGenerator, vaoHandle[7]);
 
+    constraintProjection.init(&topology, vaoHandle[8]);
 
     glGenBuffers(1, &vertexBuffer);
 
@@ -212,6 +236,17 @@ void SimpleScene::openProject(const char *fileName)
     updateQuadBuffers();
 
     printf("\n point size: %d", topology.newPoints.size());
+}
+
+void SimpleScene::importModel(const char *fileName)
+{
+    ModelToRetopo modelToRetopo;
+    modelToRetopo.importModelAsRetopo(fileName, &topology);
+    updatePointBuffers();
+    updateEdgeBuffers();
+    updateTriangleBuffers();
+    updateQuadBuffers();
+
 }
 
 void SimpleScene::update(float t)
@@ -479,7 +514,7 @@ bool SimpleScene::setActivePoint(int x, int y){
 bool SimpleScene::unsetActivePoint(int x, int y)
 {
     int glY = height - y;
-    unsigned int selectedID = getSelectedEdgeId(x, glY);
+    unsigned int selectedID = getSelectedPointId(x, glY);
     if(selectedID == 0)
         return false;
 
@@ -493,7 +528,7 @@ bool SimpleScene::unsetActivePoint(int x, int y)
 bool SimpleScene::addActivePoint(int x, int y)
 {
     int glY = height - y;
-    unsigned int selectedID = getSelectedEdgeId(x, glY);
+    unsigned int selectedID = getSelectedPointId(x, glY);
     if(selectedID == 0)
         return false;
 
@@ -1000,7 +1035,6 @@ void SimpleScene::selectPointIslandAroundPoint(unsigned int pointId)
 
 void SimpleScene::selectBorderEdges()
 {
-
     topology.setBorderEdgesActive();
     updatePointBuffers();
     updateEdgeBuffers();
@@ -1022,7 +1056,6 @@ void SimpleScene::selectBorderEdgeLine(int x, int y)
 
     updatePointBuffers();
     updateEdgeBuffers();
-
 }
 
 void SimpleScene::clearEdgeSelection()
@@ -1031,8 +1064,11 @@ void SimpleScene::clearEdgeSelection()
     updateEdgeBuffers();
 }
 
-
-
+void SimpleScene::clearPointSelection()
+{
+    topology.clearActivePoint();
+    updatePointBuffers();
+}
 
 bool SimpleScene::getSnapping() const
 {
@@ -1058,7 +1094,8 @@ void SimpleScene::indicateSnappingPoint(int x, int y)
 
 void SimpleScene::projectToSimilarModel()
 {
-    std::set<unsigned int> pointIds = getSelectedPointsIds();
+    //std::set<unsigned int> pointIds = getSelectedPointsIds();
+    std::set<unsigned int> pointIds = topology.activePoints;
     for(auto pointId : pointIds){
         TopologyPoint projectingPoint = topology.newPoints[topology.pointIdToIndex(pointId)];
         glm::mat4 viewMatrix = similarProj.getViewMatrix(projectingPoint);
@@ -1070,6 +1107,59 @@ void SimpleScene::projectToSimilarModel()
         topology.movePoint(pointId, newPosition.x, newPosition.y, newPosition.z, newNormal.x, newNormal.y, newNormal.z);
     }
 
+    updatePointBuffers();
+    updateEdgeBuffers();
+    updateTriangleBuffers();
+}
+
+void SimpleScene::startConstaintProjection()
+{
+    std::list<unsigned int> pointIds;
+    for(auto pointId : topology.getActivePoints()){
+        pointIds.push_back(pointId);
+    }
+
+    constraintProjection.setEnabled(true);
+    constraintProjection.startConstraintProj(pointIds);
+}
+
+void SimpleScene::constaintProjection(int x, int y)
+{
+    int glY = height - y;
+    unsigned int pointId = getSelectedPointId(x, glY);
+    if(pointId != 0){
+        constraintProjection.setActivePoint(pointId);
+        updatePointBuffers();
+        return;
+    }
+    float* position = getPointPosition(x, glY);
+    if(position[3] > 0.5){
+        constraintProjection.addConstraintPoint(glm::vec3(position[0], position[1], position[2]));
+        updatePointBuffers();
+        return;
+    }
+
+}
+
+void SimpleScene::applyConstaintProjection()
+{
+    constraintProjection.apply();
+    updatePointBuffers();
+    updateEdgeBuffers();
+    updateTriangleBuffers();
+}
+
+void SimpleScene::revertConstaintProjection()
+{
+    constraintProjection.revert();
+    updatePointBuffers();
+    updateEdgeBuffers();
+    updateTriangleBuffers();
+}
+
+void SimpleScene::finishConstaintProjection()
+{
+    constraintProjection.finish();
     updatePointBuffers();
     updateEdgeBuffers();
     updateTriangleBuffers();
@@ -1120,10 +1210,30 @@ void SimpleScene::projectTMPCylinderViaShader()
     glm::vec3 projectD = pointA + glm::dot(pointAD, pointAB) / glm::dot(pointAB, pointAB) * pointAB;
 
 
+    cylinderGenerator.setShouldDraw(false);
+
     updatePointBuffers();
     updateEdgeBuffers();
     updateQuadBuffers();
 
+}
+
+void SimpleScene::setCylinderRadius(float x)
+{
+    cylinderGenerator.radius += x;
+    cylinderProj.radius += x;
+}
+
+void SimpleScene::setCylinderHorizontal(int n)
+{
+    cylinderGenerator.horizontalGridSize += n;
+    cylinderProj.horizontalGridSize += n;
+}
+
+void SimpleScene::setCylinderVertical(int n)
+{
+    cylinderGenerator.verticalGridSize += n;
+    cylinderProj.verticalGridSize += n;
 }
 
 void SimpleScene::startDrawingOnSurface(int x, int y)
@@ -1156,9 +1266,42 @@ void SimpleScene::linearRegression()
 
 
     glm::vec3 startPoint = (float)(1.0/2.0) * (line[0] + lineBackFace[0]);
-    glm::vec3 endPoint =  (float)(1.0/2.0) * (line[1] + lineBackFace[1]);
+    glm::vec3 endPoint =  (float)(1.0/2.0) * (line[1] + lineBackFace[1]); 
+    if(startPoint.y > endPoint.y){
+        updateCylinderPosition(endPoint, startPoint);
+    }else{
+        updateCylinderPosition(startPoint, endPoint);
+    }
+    printf("\n base: %f", startPoint.y);
+    printf("\n top: %f", endPoint.y);
 
 }
+
+void SimpleScene::updateCylinderPosition(glm::vec3 base, glm::vec3 top){
+    float height = glm::distance(base, top);
+    glm::vec3 upDir = glm::normalize(top-base);
+
+    glm::vec3 rayDir = glm::cross(upDir, glm::vec3(1,0,0));
+    if(rayDir.x == 0 && rayDir.y == 0 && rayDir.z == 0){
+        rayDir = glm::cross(upDir, glm::vec3(0,1,0));
+    }
+    rayDir = glm::normalize(rayDir);
+
+
+    cylinderGenerator.height = height;
+    cylinderGenerator.basePointPos = base;
+    cylinderGenerator.topPointPos = top;
+    cylinderGenerator.baseUpDirection = upDir;
+    cylinderGenerator.baseRayDirection = rayDir;
+    cylinderGenerator.setShouldDraw(true);
+
+    cylinderProj.height = height;
+    cylinderProj.basePointPos = base;
+    cylinderProj.topPointPos = top;
+    cylinderProj.baseUpDirection = upDir;
+    cylinderProj.baseRayDirection = rayDir;
+}
+
 
 void SimpleScene::startRectangleSelection(int x, int y)
 {
@@ -1183,6 +1326,136 @@ void SimpleScene::rectangleSelection(int x, int y)
     int glY = height - y;
     selectionRectangle.setEndPosition(x, glY);
     selectionRectangle.setShouldDraw(true);
+}
+
+void SimpleScene::moveManipulatorStart(int x, int y)
+{
+    isGizmoMoving = gizmoMove->OnMouseDown(x, y);
+}
+
+void SimpleScene::moveManipulatorMove(int x, int y)
+{
+    //if(isGizmoMoving)
+        gizmoMove->OnMouseMove(x, y);
+        if(showMoveGizmo && isGizmoMoving){
+            vertexIsland.updateIslandPosition();
+            updatePointBuffers();
+            updateEdgeBuffers();
+            updateTriangleBuffers();
+        }
+}
+
+void SimpleScene::moveManipulatorEnd(int x, int y)
+{
+    gizmoMove->OnMouseUp(x, y);
+    isGizmoMoving = false;
+}
+
+void SimpleScene::rotateManipulatorStart(int x, int y)
+{
+    isGizmoRotating = gizmoRotate->OnMouseDown(x, y);
+    if(isGizmoRotating){
+        vertexIsland.resetVertexStartPositions();
+    }
+}
+
+void SimpleScene::rotateManipulatorMove(int x, int y)
+{
+    gizmoRotate->OnMouseMove(x, y);
+    if(showRotateGizmo && isGizmoRotating){
+        vertexIsland.updateIslandRotation();
+        updatePointBuffers();
+        updateEdgeBuffers();
+        updateTriangleBuffers();
+    }
+}
+
+void SimpleScene::rotateManipulatorEnd(int x, int y)
+{
+    gizmoRotate->OnMouseUp(x, y);
+    isGizmoRotating = false;
+}
+
+void SimpleScene::scaleManipulatorStart(int x, int y)
+{
+    isGizmoScaling = gizmoScale->OnMouseDown(x, y);
+    if(isGizmoScaling){
+        vertexIsland.resetVertexStartPositions();
+    }
+}
+
+void SimpleScene::scaleManipulatorMove(int x, int y)
+{
+    gizmoScale->OnMouseMove(x, y);
+    if(showScaleGizmo && isGizmoScaling){
+        vertexIsland.updateIslandScaling();
+        updatePointBuffers();
+        updateEdgeBuffers();
+        updateTriangleBuffers();
+    }
+}
+
+void SimpleScene::scaleManipulatorEnd(int x, int y)
+{
+    gizmoScale->OnMouseUp(x, y);
+    isGizmoScaling = false;
+}
+
+void SimpleScene::setShowMoveGizmo(bool show)
+{
+    showMoveGizmo = !showMoveGizmo;
+    if(topology.activePoints.empty()){
+        showMoveGizmo = false;
+        return;
+    }
+    if(showMoveGizmo){
+        vertexIsland.clear();
+        std::list<unsigned int> selectedPointIds;
+        for(auto pointId : topology.activePoints){
+            selectedPointIds.push_back(pointId);
+        }
+        vertexIsland.addVertexIds(selectedPointIds);
+        vertexIsland.updateModelMatrix();
+        gizmoMove->SetEditMatrix(glm::value_ptr(vertexIsland.modelMatrix));
+    }
+}
+
+void SimpleScene::switchShowRotateGizmo()
+{
+    showRotateGizmo = !showRotateGizmo;
+    if(topology.activePoints.empty()){
+        showRotateGizmo = false;
+        return;
+    }
+    if(showRotateGizmo){
+        vertexIsland.clear();
+        std::list<unsigned int> selectedPointIds;
+        for(auto pointId : topology.activePoints){
+            selectedPointIds.push_back(pointId);
+        }
+        vertexIsland.addVertexIds(selectedPointIds);
+        vertexIsland.updateModelMatrix();
+        gizmoRotate->SetEditMatrix(glm::value_ptr(vertexIsland.modelMatrix));
+    }
+}
+
+void SimpleScene::switchShowScaleGizmo()
+{
+    showScaleGizmo = !showScaleGizmo;
+    if(topology.activePoints.empty()){
+        showScaleGizmo = false;
+        return;
+    }
+    if(showScaleGizmo){
+        vertexIsland.clear();
+        std::list<unsigned int> selectedPointIds;
+        for(auto pointId : topology.activePoints){
+            selectedPointIds.push_back(pointId);
+        }
+        vertexIsland.addVertexIds(selectedPointIds);
+        vertexIsland.updateModelMatrix();
+        gizmoScale->SetEditMatrix(glm::value_ptr(vertexIsland.modelMatrix));
+    }
 }
 
 std::vector<glm::vec3> SimpleScene::getLineStartAndEndPoint(std::list<glm::vec3> points)
@@ -1563,7 +1836,7 @@ std::vector<glm::vec3> SimpleScene::getPointDataViaCylinderShader(bool outputTyp
 
     static float* positionsk = new float[4];
     int x = width / cylinderProj.verticalGridSize;
-    int y = height / cylinderProj.horizontalGridSize;
+    int y = height / (cylinderProj.horizontalGridSize-1);
     int index;
 
     //TODO megvizsgalni
@@ -1591,6 +1864,10 @@ std::vector<glm::vec3> SimpleScene::getPointDataViaCylinderShader(bool outputTyp
 
 void SimpleScene::render()
 {
+
+    glClearColor(0.2f,0.2f,0.2f,1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     altshader->enable();
     altshader->bindUniformMatrixMat3("normalmatrix",normalmatrix);
     altshader->bindUniformMatrixMat4("projection",projection);
@@ -1599,8 +1876,6 @@ void SimpleScene::render()
 
 
 
-    glClearColor(0.2f,0.2f,0.2f,1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glBindVertexArray(vaoHandle[0]);
     glDrawElements(GL_TRIANGLES, nVertex, GL_UNSIGNED_INT, NULL);
 
@@ -1698,6 +1973,7 @@ void SimpleScene::render()
         topology_shader->bindUniformMatrixMat4("projection",projection);
         topology_shader->bindUniformMatrixMat4("modelview", modelview);
         topology_shader->bindUniformFloat("snappingId", (float)snappingPointId);
+        topology_shader->bindUniformFloat("activeConstraintId", (float)constraintProjection.getActivePointId());
         glBindVertexArray(vaoHandle[1]);
         if(snapping){
             glPointSize(30);
@@ -1715,9 +1991,33 @@ void SimpleScene::render()
         glDepthMask(true);
     }
 
-
+    cylinderGenerator.allowedDraw(projection, modelview);
     selectionRectangle.allowedDraw();
+    constraintProjection.allowedDraw(projection, modelview);
+    if(showMoveGizmo){
+        gizmoMove->SetLocation( IGizmo::LOCATE_WORLD );
+        gizmoMove->SetCameraMatrix( glm::value_ptr(modelview), glm::value_ptr(projection) );
+        gizmoMove->Draw();
+    }
 
+    if(showRotateGizmo){
+        gizmoRotate->SetLocation( IGizmo::LOCATE_LOCAL );
+        gizmoRotate->SetCameraMatrix( glm::value_ptr(modelview), glm::value_ptr(projection) );
+        gizmoRotate->Draw();
+    }
+
+    if(showScaleGizmo){
+        gizmoScale->SetLocation( IGizmo::LOCATE_WORLD );
+        gizmoScale->SetCameraMatrix( glm::value_ptr(modelview), glm::value_ptr(projection) );
+        gizmoScale->Draw();
+    }
+/*
+    gizmoRotate->SetLocation( IGizmo::LOCATE_LOCAL );
+    gizmoRotate->SetEditMatrix( glm::value_ptr(modelview) );
+    //gizmoMove->SetCameraMatrix(identitymatrix, identitymatrix);
+    gizmoRotate->SetCameraMatrix( glm::value_ptr(modelview), glm::value_ptr(projection) );
+    gizmoRotate->Draw();
+*/
     //glDisable(GL_CULL_FACE);
 
 
@@ -1735,6 +2035,9 @@ void SimpleScene::resize(int w, int h)
     }
     createFrameBuffers(width, height);
     selectionRectangle.setSize(height, width);
+    gizmoMove->SetScreenDimension(width, height);
+    gizmoRotate->SetScreenDimension(width, height);
+    gizmoScale->SetScreenDimension(width, height);
 }
 
 
@@ -1755,6 +2058,11 @@ void SimpleScene::deleteFrameBuffers()
 
 void SimpleScene::createFrameBuffers(int width, int height)
 {
+    GLenum err = glGetError();
+    if(err == GL_INVALID_ENUM)
+        printf("invalid enum\n");
+    else if(err == GL_INVALID_OPERATION)
+        printf("invalid sheit\n");
     cylinderNormalFrameBuffer = new Framebuffer(width, height, 1, false, true);
     cylinderPositionFrameBuffer = new Framebuffer(width, height, 1, false, true);
     similarNormalFrameBuffer = new Framebuffer(width, height, 1, false, true);

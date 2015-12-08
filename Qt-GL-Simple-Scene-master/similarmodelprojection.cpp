@@ -12,7 +12,7 @@ SimilarModelProjection::SimilarModelProjection()
     // 1x1 FB elég kell hogy legyen, ORTHO MÉRETEKET átírni megfelelő kicsire
     // vertex shader z -> |Z| **done
     // 0,0,0 -ba ne menjen csak ha tényleg oda kell
-    // vertex island kiválasztása
+    // vertex island kiválasztása **done
     // elforgatás, skálázás elforgatás
     // több fázisú eszköznek impl. alul felül látszik távolságok
     // több fázisú henger vetítés impl.
@@ -23,7 +23,7 @@ SimilarModelProjection::SimilarModelProjection()
     // felület kipofozása! Okosan megtervezni a felületet, triviálos dolgokat lehet, mit - hova - miért?
     // egyes arc részleteket nagyfelbontású modelből szétszabdalni
 
-    //jövőbeni fejlesztése: ruha szim kényszerek integrálás
+    // jövőbeni fejlesztése: ruha szim kényszerek integrálás
 }
 
 void SimilarModelProjection::projectToModel(std::vector<glm::vec3> pointPositions, std::vector<glm::vec3> pointNormals, Topology &topology)

@@ -58,13 +58,44 @@ private slots:
     void setParagraphSpacing();
     void about();
     void aboutQt();
+    void button1Toggled();
+    void button2Toggled();
+
+    //Common toolbar
+    void selectButtonToggled();
+    void translateButtonToggled();
+    void rotateButtonToggled();
+    void scaleButtonToggled();
+    void selectPointButtonToggled();
+    void selectPointIslandButtonToggled();
+    void selectEdgeButtonToggled();
+    void selectEdgeBorderButtonToggled();
+    void selectTriangleButtonToggled();
+    void selectQuadButtonToggled();
+
+    //Simple toolbar
+    void addPointButtonToggled();
+    void addPointAutoButtonToggled();
+    void addEdgeButtonToggled();
+    void extrudeEdgeButtonToggled();
+    void divideEdgeButtonToggled();
+    void divideTriangleButtonToggled();
+
+    //Advenced toolbar
+    void cylinderProjButtonToggled();
+    void similarProjButtonToggled();
+    void constraintProjButtonToggled();
 
 private:
     MainView *glView;
 
     void createActions();
     void createMenus();
-
+    void createSimpleToolbar();
+    QWidget *createLeftActionToolbars();
+    QWidget *createCommonActionToolbar();
+    QWidget* createSimpleActionToolbar();
+    QWidget* createAdvencedActionToolbar();
     QMenu *fileMenu;
     QMenu *toolMenu;
     QMenu *editMenu;
@@ -106,7 +137,52 @@ private:
     QLabel *infoLabel;
 
     QToolBar *toolBar;
+    QToolBar *simpleToolBar;
+    QToolBar *advancedToolBar;
     QToolBar *modeToolBar;
+
+    QToolButton* qtoolButton1;
+    QToolButton* qtoolButton2;
+    QMenu* but1menu;
+
+    //Common toolbar
+    QToolButton* selectButton;
+    QToolButton* translateButton;
+    QToolButton* rotateButton;
+    QToolButton* scaleButton;
+    QToolButton* selectPointButton;
+    QToolButton* selectPointIslandButton;
+    QToolButton* selectEdgeButton;
+    QToolButton* selectEdgeBorderButton;
+    QToolButton* selectTriangleButton;
+    QToolButton* selectQuadButton;
+    QToolButton* selectPointHelperButton;
+    QMenu* selectPointHelperMenu;
+    QToolButton* selectEdgeHelperButton;
+    QMenu* selectEdgeHelperMenu;
+
+    //Simple toolbar
+    QToolButton* addPointButton;
+    QToolButton* addPointAutoButton;
+    QToolButton* addEdgeButton;
+    QToolButton* extrudeEdgeButton;
+    QToolButton* divideEdgeButton;
+    QToolButton* divideTriangleButton;
+    QToolButton* addPointHelperButton;
+    QMenu* addPointHelperMenu;
+
+    //Advenced toolbar
+    QToolButton* cylinderProjButton;
+    QToolButton* similarProjButton;
+    QToolButton* constraintProjButton;
+
+    void toggleOffAllTools();
+    void toggleOffCommonTools();
+    void toggleOffSelectionTools();
+    void toggleOffManipulatorTools();
+    void toggleOffSimpleTools();
+    void toggleOffAdvancedTools();
+    void toggleOffNotCommonTools();
 
 };
 

@@ -23,6 +23,7 @@ private:
      GLuint pointNormalBuffer;
      GLuint pointIdBuffer;
      GLuint pointActiveBuffer;
+     GLuint pointConstraintProjBuffer;
 
      GLuint edgeVertexBuffer;
      GLuint edgeNormalBuffer;
@@ -57,24 +58,34 @@ private:
 public:
     unsigned int activePointId;
     std::vector<TopologyPoint> newPoints;
+    std::vector<TopologyPoint> newPointsSave;
     std::vector<float> newPointsPos;
     std::vector<float> newPointsNormal;
+    std::vector<float> newPointsPosSave;
+    std::vector<float> newPointsNormalSave;
     std::vector<float> newPointsId;
     std::vector<float> newPointsActive;
+    std::vector<float> newPointsConstraintProj;
 
     std::vector<TopologyHelperQuad> quads;
     std::vector<unsigned int> quadIndices;
 
     std::vector<TopologyHelperTriangle> triangles;
+    std::vector<TopologyHelperTriangle> trianglesSave;
     //std::vector<unsigned int> triangleIndices;
     std::vector<float> trianglePos;
     std::vector<float> triangleNormal;
+    std::vector<float> trianglePosSave;
+    std::vector<float> triangleNormalSave;
     std::vector<float> triangleId;
 
    // unsigned int activeEdgeId;
     std::vector<TopologyEdge> edges;
+    std::vector<TopologyEdge> edgesSave;
     std::vector<float> newEdgePos;
     std::vector<float> newEdgeNormal;
+    std::vector<float> newEdgePosSave;
+    std::vector<float> newEdgeNormalSave;
     std::vector<float> newEdgeId;
     std::vector<float> newEdgeActive;
     std::vector<float> newEdgeBorder;
@@ -112,6 +123,7 @@ public:
     void removePoint(unsigned int id);
     void setActivePoint(unsigned int id);
     void movePoint(unsigned int id, float posX, float posY, float posZ, float normX, float normY, float normZ);
+    void movePoint(unsigned int id, float posX, float posY, float posZ);
     int pointIdToIndex(unsigned int id);
     int edgeIdToIndex(unsigned int id);
     int triangleIdToIndex(unsigned int id);
@@ -148,6 +160,8 @@ public:
     std::set<unsigned int> getActivePoints();
     unsigned int getRandomActivePoint();
 
+    void addConstraintProjPoint(unsigned int pointId);
+    void removeConstraintProjPoint(unsigned int pointId);
 
     void addActiveEdge(unsigned int edgeId);
     void removeActiveEdge(unsigned int edgeId);
@@ -163,6 +177,9 @@ public:
     bool isEdgeBorder(unsigned int edgeId);
 
     void setBorderEdgesActive();
+
+    void saveState();
+    void loadState();
 
 };
 

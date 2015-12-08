@@ -4,8 +4,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <GL/gl3w.h>
 #include <vector>
+//#include <IGizmo.h>
+#include "libgizmo/IGizmo.h"
 
 #include "scene.h"
+#include "circlegenerator.h"
+#include "cylindergenerator.h"
 #include "glslprogram.h"
 #include "shader.hpp"
 #include "framebuffer.hpp"
@@ -17,7 +21,15 @@
 #include "linearregressor.h"
 #include "selectionrectangle.h"
 #include "similarmodelprojection.h"
+#include "vertexisland.h"
+#include "constraintprojection.h"
 
+
+/*
+ *
+ * TODO:színezni vertexeket, amiket algoritmussal szeretnénk vetíteni.
+ *
+ **/
 class SimpleScene : public Scene
 {
 public:
@@ -37,7 +49,7 @@ private:
     GLuint indicesBuffer;
     int width, height, nVertex;
     GLuint vboHandles[3];
-    GLuint vaoHandle[6];
+    GLuint vaoHandle[9];
     GLuint texture[2];
     GLSLProgram shader;
     Shader* altshader;
@@ -82,7 +94,20 @@ private:
     CylinderProjection cylinderProj;
     SimilarModelProjection similarProj;
     SelectionRectangle selectionRectangle;
+    CircleGenerator circleGenerator;
+    CylinderGenerator cylinderGenerator;
+    ConstraintProjection constraintProjection;
 
+    VertexIsland vertexIsland;
+
+    IGizmo *gizmo;
+    IGizmo *gizmoMove, *gizmoRotate, *gizmoScale;
+    bool isGizmoMoving;
+    bool showMoveGizmo;
+    bool isGizmoRotating;
+    bool showRotateGizmo;
+    bool isGizmoScaling;
+    bool showScaleGizmo;
 
     glm::vec3 cameraPos;
     glm::vec3 cameraDir;
@@ -123,6 +148,8 @@ private:
     std::vector<glm::vec3> getPointDataViaCylinderShader( bool outputType);
 
     std::vector<glm::vec3> getLineStartAndEndPoint(std::list<glm::vec3> points);
+    void updateCylinderPosition(glm::vec3 base, glm::vec3 top);
+
 
     void deleteFrameBuffers();
     void createFrameBuffers(int width, int height);
@@ -159,6 +186,7 @@ public:
     void loadModelFromFile(const char* fileName);
     void saveProject(const char* fileName);
     void openProject(const char* fileName);
+    void importModel(const char* fileName);
 
     void makeNewPoint(int x, int y);
 
@@ -194,8 +222,14 @@ public:
     void selectBorderEdges();
     void selectBorderEdgeLine(int x, int y);
     void clearEdgeSelection();
+    void clearPointSelection();
 
     void projectToSimilarModel();
+    void startConstaintProjection();
+    void constaintProjection(int x, int y);
+    void applyConstaintProjection();
+    void revertConstaintProjection();
+    void finishConstaintProjection();
 
     //haxx
 
@@ -210,6 +244,9 @@ public:
     void projectTMPCylinder();
     void projectTMPCylinderViaShader();
 
+    void setCylinderRadius(float x);
+    void setCylinderHorizontal(int n);
+    void setCylinderVertical(int n);
 
 
     void startDrawingOnSurface(int x, int y);
@@ -223,6 +260,21 @@ public:
     void stopRectangleSelection(int x, int y);
     void rectangleSelection(int x, int y);
 
+    void moveManipulatorStart(int x, int y);
+    void moveManipulatorMove(int x, int y);
+    void moveManipulatorEnd(int x, int y);
+
+    void rotateManipulatorStart(int x, int y);
+    void rotateManipulatorMove(int x, int y);
+    void rotateManipulatorEnd(int x, int y);
+
+    void scaleManipulatorStart(int x, int y);
+    void scaleManipulatorMove(int x, int y);
+    void scaleManipulatorEnd(int x, int y);
+
+    void setShowMoveGizmo(bool show);
+    void switchShowRotateGizmo();
+    void switchShowScaleGizmo();
 
 
 };
