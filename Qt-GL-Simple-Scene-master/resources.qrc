@@ -19,5 +19,6 @@
         <file alias="triangleDivide">icons/triangle_divide.png</file>
         <file alias="triangleSel">icons/triangle_selection.png</file>
         <file alias="selectArrow">icons/select_arrow.png</file>
+        <file alias="pointMove">icons/point_move.png</file>
     </qresource>
 </RCC>

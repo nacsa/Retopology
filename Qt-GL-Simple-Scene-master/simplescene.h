@@ -23,6 +23,7 @@
 #include "similarmodelprojection.h"
 #include "vertexisland.h"
 #include "constraintprojection.h"
+#include "Timer.h"
 
 
 /*
@@ -43,6 +44,7 @@ public:
 
 
 private:
+    Timer timer;
     ProjectManager projectManager;
     GLuint vertexBuffer;
     GLuint normalBuffer;
@@ -187,17 +189,27 @@ public:
     void saveProject(const char* fileName);
     void openProject(const char* fileName);
     void importModel(const char* fileName);
+    void exportModel(const char* fileName);
 
     void makeNewPoint(int x, int y);
+
+    void setActivePoint(std::set<unsigned int> pointIds);
+    void unsetActivePoint(std::set<unsigned int> pointIds);
+    void addActivePoint(std::set<unsigned int> pointIds);
 
     bool setActivePoint(int x, int y);
     bool unsetActivePoint(int x, int y);
     bool addActivePoint(int x, int y);
 
+    void setActiveEdge(std::list<unsigned int> edgeIds);
+    void unsetActiveEdge(std::list<unsigned int> edgeIds);
+    void addActiveEdge(std::list<unsigned int> edgeIds);
+
     bool setActiveEdge(int x, int y);
     bool unsetActiveEdge(int x, int y);
     bool addActiveEdge(int x, int y);
 
+    void addEdgeTool(int x, int y);
     void makeEdgeBeetweenPoints(int x, int y);
     void removeActivePoint();
     void removeActiveEdge();
@@ -216,11 +228,18 @@ public:
 
     void moveExtrudablePoint(int x, int y);
 
-    void selectPointIsland(int x, int y);
+    void setActivePointIsland(int x, int y);
+    void unsetActivePointIsland(int x, int y);
+    void addActivePointIsland(int x, int y);
+
+    std::set<unsigned int> selectPointIsland(int x, int y);
     void selectPointIslandAroundPoint(unsigned int pointId);
 
     void selectBorderEdges();
-    void selectBorderEdgeLine(int x, int y);
+    void setActiveBorderEdgeLine(int x, int y);
+    void unsetActiveBorderEdgeLine(int x, int y);
+    void addActiveBorderEdgeLine(int x, int y);
+    std::list<unsigned int> selectBorderEdgeLine(int x, int y);
     void clearEdgeSelection();
     void clearPointSelection();
 
@@ -265,18 +284,19 @@ public:
     void moveManipulatorEnd(int x, int y);
 
     void rotateManipulatorStart(int x, int y);
+    void rotateManipulatorEnable();
     void rotateManipulatorMove(int x, int y);
     void rotateManipulatorEnd(int x, int y);
 
     void scaleManipulatorStart(int x, int y);
+    void scaleManipulatorEnable();
     void scaleManipulatorMove(int x, int y);
     void scaleManipulatorEnd(int x, int y);
 
     void setShowMoveGizmo(bool show);
-    void switchShowRotateGizmo();
-    void switchShowScaleGizmo();
+    void switchShowRotateGizmo(bool show);
+    void switchShowScaleGizmo(bool show);
 
 
 };
-
 #endif

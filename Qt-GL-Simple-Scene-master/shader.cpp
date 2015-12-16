@@ -20,8 +20,11 @@
 
 #include <iostream>
 #include <fstream>
+#include <cstdio>
 #include <GL/gl3w.h>
 
+#include "qfile.h"
+#include "qbytearray.h"
 #include "shader.hpp"
 
 Shader::Shader(){
@@ -39,7 +42,46 @@ Shader::Shader(const char* vertexShaderPath, const char* fragmentShaderPath, con
   glDeleteShader(fragmentProgram);
 }
 
+void Shader::load(const char *vertexShaderPath, const char *fragmentShaderPath, const char *geometryShaderPath)
+{
+    geometryProgram = 0;
+
+    shaderFromQFile(vertexShaderPath, GL_VERTEX_SHADER, vertexProgram);
+    shaderFromQFile(fragmentShaderPath, GL_FRAGMENT_SHADER, fragmentProgram);
+    if(geometryShaderPath)
+        shaderFromQFile(geometryShaderPath, GL_GEOMETRY_SHADER, geometryProgram);
+    linkShaders(vertexProgram, fragmentProgram, geometryProgram, shaderProgram);
+    glDeleteShader(vertexProgram);
+    glDeleteShader(fragmentProgram);
+}
+
 Shader::~Shader(){
+}
+
+void Shader::shaderFromQFile(const char *shaderPath, GLenum shaderType, GLuint &handle)
+{
+    char* shaderSource = NULL;
+    int len = 0;
+    int errorFlag = -1;
+    QByteArray blob[1];
+    if(!qfileToString(shaderPath, blob, len)){
+      std::cout << "Error loading shader: " << shaderPath << std::endl;
+      return;
+    }
+    shaderSource = blob[0].data();
+    //len = blob[0].size();
+    handle = glCreateShader(shaderType);
+
+    glShaderSource(handle, 1, (const char**)&shaderSource, &len);
+    glCompileShader(handle);
+    //delete[] shaderSource;
+    blob[0].clear();
+    glGetShaderiv(handle, GL_COMPILE_STATUS, &errorFlag);
+    if(!errorFlag){
+      std::cout << "Shader compile error: " << shaderPath << std::endl;
+      std::cout << getShaderInfoLog(handle) << std::endl;
+      return;
+    }
 }
 
 void Shader::shaderFromFile(const char* shaderPath, GLenum shaderType, GLuint& handle){
@@ -140,6 +182,28 @@ bool Shader::fileToString(const char* path, char*& out, int& len) {
   file.close();
   out[len] = 0;
   return true;
+}
+
+bool Shader::qfileToString(const char *path, QByteArray* blob, int &len)
+{
+    QFile file(path);
+    file.open(QIODevice::ReadOnly);
+    //std::ifstream tmpstream(::_fdopen(qfile.handle(), "r"));
+    //std::ifstream  file(::_fdopen(qfile.handle(), "r"));//, std::ios::ate | std::ios::binary);
+    if(!file.isOpen()) {
+      return false;
+    }
+    blob[0] = file.readAll();
+    len = blob[0].size();
+    //out = blob.data();
+    /*
+    len = file.tellg();
+    out = new char[ len+1 ];
+    file.seekg (0, std::ios::beg);
+    file.read(out, len);
+    file.close();
+    out[len] = 0;*/
+    return true;
 }
 
 void Shader::enable(){

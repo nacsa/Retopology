@@ -108,6 +108,12 @@ unsigned int Topology::addEdge(unsigned int pointId1, unsigned int pointId2){
     //1. meg kell vizsgálni van-e él...
     unsigned int index1 = pointIdToIndex(pointId1);
     if(newPoints[index1].isPointIdNeighbor(pointId2)){
+        for(TopologyEdge edge : edges){
+            if(edge.pointId1 == pointId1 && edge.pointId2 == pointId2 ||
+                 edge.pointId1 == pointId2 && edge.pointId2 == pointId1 ){
+                return edge.getId();
+            }
+        }
         return 0;
     }
     TopologyEdge tmpEdge = TopologyEdge(pointId1, pointId2);
@@ -432,9 +438,6 @@ void Topology::movePoint(unsigned int id, float posX, float posY, float posZ)
 
 int Topology::pointIdToIndex(unsigned int id)
 {
-    for(auto pointId : pointId_index){
-        printf("\n** %d - %d", pointId.first, pointId.second);
-    }
     return pointId_index[id];
 }
 
@@ -637,6 +640,61 @@ void Topology::addTriangle(unsigned int edgeId1, unsigned int pointId1, unsigned
     triangles.push_back(triangle);
     triangleId_index[triangle.getId()]=triangles.size()-1;
 
+}
+
+void Topology::addTriangleFromModel(unsigned int edgeId1, unsigned int edgeId2, unsigned int edgeId3, unsigned int pointId1, unsigned int pointId2, unsigned int pointId3)
+{
+    int index1 = pointIdToIndex(pointId1);
+    int index2 = pointIdToIndex(pointId2);
+    int index3 = pointIdToIndex(pointId3);
+    int edgeIndex = edgeIdToIndex(edgeId1);
+    int edgeIndex2 = edgeIdToIndex(edgeId2);
+    int edgeIndex3 = edgeIdToIndex(edgeId3);
+
+    TopologyHelperTriangle triangle = TopologyHelperTriangle(pointId1, pointId2, pointId3);
+    triangle.edgeId1 = edgeId1;
+    triangle.edgeId2 = edgeId2;
+    triangle.edgeId3 = edgeId3;
+
+
+    edges[edgeIndex].addNeighborTriangle(triangle.getId());
+    edges[edgeIndex2].addNeighborTriangle(triangle.getId());
+    edges[edgeIndex3].addNeighborTriangle(triangle.getId());
+
+
+    trianglePos.push_back(newPointsPos[index1*3]);
+    trianglePos.push_back(newPointsPos[index1*3+1]);
+    trianglePos.push_back(newPointsPos[index1*3+2]);
+    triangleNormal.push_back(newPointsNormal[index1*3]);
+    triangleNormal.push_back(newPointsNormal[index1*3+1]);
+    triangleNormal.push_back(newPointsNormal[index1*3+2]);
+
+    trianglePos.push_back(newPointsPos[index2*3]);
+    trianglePos.push_back(newPointsPos[index2*3+1]);
+    trianglePos.push_back(newPointsPos[index2*3+2]);
+    triangleNormal.push_back(newPointsNormal[index2*3]);
+    triangleNormal.push_back(newPointsNormal[index2*3+1]);
+    triangleNormal.push_back(newPointsNormal[index2*3+2]);
+
+    trianglePos.push_back(newPointsPos[index3*3]);
+    trianglePos.push_back(newPointsPos[index3*3+1]);
+    trianglePos.push_back(newPointsPos[index3*3+2]);
+    triangleNormal.push_back(newPointsNormal[index3*3]);
+    triangleNormal.push_back(newPointsNormal[index3*3+1]);
+    triangleNormal.push_back(newPointsNormal[index3*3+2]);
+
+
+
+    triangleId.push_back((float)triangle.getId());
+    triangleId.push_back((float)triangle.getId());
+    triangleId.push_back((float)triangle.getId());
+
+    testEdgeBorder(triangle.edgeId1);
+    testEdgeBorder(triangle.edgeId2);
+    testEdgeBorder(triangle.edgeId3);
+
+    triangles.push_back(triangle);
+    triangleId_index[triangle.getId()]=triangles.size()-1;
 }
 
 void Topology::removeTriangle(unsigned int id, unsigned int edgeId)
@@ -1302,8 +1360,23 @@ std::list<unsigned int> Topology::getBorderEdgeLine(unsigned int edgeId)
         nextEdgeId = data[0];
         nextPointId = data[1];
 
-        if(nextEdgeId == edgeId)
+        if(nextEdgeId == edgeId || nextEdgeId == -1)
             break;
+
+    }
+
+
+    nextPointId = edges[edgeIdToIndex(edgeId)].pointId2;
+    nextEdgeId = edgeId;
+
+    while(nextEdgeId != 0){
+        data = nextValidBorderEdge(edgeId,nextEdgeId, nextPointId);
+        nextEdgeId = data[0];
+        nextPointId = data[1];
+
+        if(nextEdgeId == edgeId || nextEdgeId == -1)
+            break;
+        edgeLine.push_back(nextEdgeId);
 
     }
 
@@ -1320,7 +1393,8 @@ unsigned int* Topology::nextValidBorderEdge(unsigned int firstEdge, unsigned int
 
 
     unsigned int ret[2];
-
+    ret[0] = -1;
+    ret[1] = -1;
 
 
     int prevPointIx = pointIdToIndex(previousPoint);

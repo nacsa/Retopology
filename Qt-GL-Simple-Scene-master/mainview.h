@@ -13,8 +13,11 @@
 #include "UserToolState.h"
 
 enum CylinderProjState{
-    PPPPP,
-    SSSSSSS
+    NONE,
+    DRAW_LINE,
+    RADIUS_SELECTION,
+    HORIZONTAL_SELECTION,
+    VERTICAL_SELECTION
 };
 
 enum ConstraintProjState{
@@ -31,6 +34,7 @@ private:
     SimpleScene *scene;
     UserToolState currentToolState;
     ConstraintProjState constraintProjState;
+    CylinderProjState cylinderProjState;
 
 public:
     MainView( const QGLFormat & format, QWidget *parent = 0 );
@@ -85,6 +89,7 @@ public slots:
     void saveProject(const char* fileName);
     void openProject(const char* fileName);
     void importModel(const char* fileName);
+    void exportModel(const char* fileName);
 
     //tool
     void cylinderProj();

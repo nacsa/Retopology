@@ -25,6 +25,7 @@
 
 #include <glm/glm.hpp>
 #include <GL/gl3w.h>
+#include <qbytearray.h>
 
 using glm::mat4;
 using glm::mat3;
@@ -36,16 +37,19 @@ private:
   GLuint fragmentProgram;
   GLuint geometryProgram;
 
-  Shader();
   bool fileToString(const char* path, char* &out, int& len);
+  bool qfileToString(const char* path, QByteArray *blob, int& len);
 
 public:
+  Shader();
   Shader(const char* vertexShaderPath, const char* fragmentShaderPath, const char* geometryShaderPath = 0);
+  void load(const char* vertexShaderPath, const char* fragmentShaderPath, const char* geometryShaderPath = 0);
   virtual ~Shader();
 
   GLuint getProgram(){return shaderProgram;}
   GLuint getGeometryProgram(){return geometryProgram;}
 
+  void shaderFromQFile(const char* shaderPath, GLenum shaderType, GLuint& handle);
   void shaderFromFile(const char* shaderPath, GLenum shaderType, GLuint& handle);
   void linkShaders(GLuint& vertexShader, GLuint& fragmentShader, GLuint& geometryShader, GLuint& handle);
 

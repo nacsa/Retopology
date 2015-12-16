@@ -1,0 +1,40 @@
+<RCC>
+    <qresource prefix="/">
+        <file alias="circle_fragment">shaders/circle_fragment.glsl</file>
+        <file alias="selectrect_fragment">shaders/selectrect_fragment.glsl</file>
+        <file alias="selectrect_vertex">shaders/selectrect_vertex.glsl</file>
+        <file alias="circle_vertex">shaders/circle_vertex.glsl</file>
+        <file alias="color_fragment">shaders/color_fragment.glsl</file>
+        <file alias="color_geometry">shaders/color_geometry.glsl</file>
+        <file alias="color_vertex">shaders/color_vertex.glsl</file>
+        <file alias="constraintproj_fragment">shaders/constraintproj_fragment.glsl</file>
+        <file alias="constraintproj_geometry">shaders/constraintproj_geometry.glsl</file>
+        <file alias="constraintproj_vertex">shaders/constraintproj_vertex.glsl</file>
+        <file alias="cylinderproj_fragment">shaders/cylinderproj_fragment.glsl</file>
+        <file alias="cylinderproj_geometry">shaders/cylinderproj_geometry.glsl</file>
+        <file alias="cylinderproj_vertex">shaders/cylinderproj_vertex.glsl</file>
+        <file alias="edge_fragment">shaders/edge_fragment.glsl</file>
+        <file alias="edge_vertex">shaders/edge_vertex.glsl</file>
+        <file alias="edgeid_fragment">shaders/edgeid_fragment.glsl</file>
+        <file alias="edgeid_vertex">shaders/edgeid_vertex.glsl</file>
+        <file alias="fragment">shaders/fragment.glsl</file>
+        <file alias="newpoint_fragment">shaders/newpoint_fragment.glsl</file>
+        <file alias="newpoint_geometry">shaders/newpoint_geometry.glsl</file>
+        <file alias="newpoint_vertex">shaders/newpoint_vertex.glsl</file>
+        <file alias="pointid_fragment">shaders/pointid_fragment.glsl</file>
+        <file alias="pointid_vertex">shaders/pointid_vertex.glsl</file>
+        <file alias="pointnormal_fragment">shaders/pointnormal_fragment.glsl</file>
+        <file alias="pointnormal_vertex">shaders/pointnormal_vertex.glsl</file>
+        <file alias="quad_fragment">shaders/quad_fragment.glsl</file>
+        <file alias="quad_vertex">shaders/quad_vertex.glsl</file>
+        <file alias="similarmodelnormproj_fragment">shaders/similarmodelnormproj_fragment.glsl</file>
+        <file alias="similarmodelnormproj_vertex">shaders/similarmodelnormproj_vertex.glsl</file>
+        <file alias="similarmodelposproj_fragment">shaders/similarmodelposproj_fragment.glsl</file>
+        <file alias="similarmodelposproj_vertex">shaders/similarmodelposproj_vertex.glsl</file>
+        <file alias="triangle_fragment">shaders/triangle_fragment.glsl</file>
+        <file alias="triangle_vertex">shaders/triangle_vertex.glsl</file>
+        <file alias="triangleid_fragment">shaders/triangleid_fragment.glsl</file>
+        <file alias="triangleid_vertex">shaders/triangleid_vertex.glsl</file>
+        <file alias="vertex">shaders/vertex.glsl</file>
+    </qresource>
+</RCC>

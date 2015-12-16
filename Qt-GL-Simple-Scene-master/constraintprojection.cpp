@@ -39,9 +39,10 @@ void ConstraintProjection::init(Topology *topology, GLuint vaoHandle)
     this->enabled = false;
     this->topology = topology;
     this->vaoHandle = vaoHandle;
-    shader = new Shader("D:\\msconlab\\Qt-GL-Simple-Scene-master\\constraintproj_vertex.glsl",
-                        "D:\\msconlab\\Qt-GL-Simple-Scene-master\\constraintproj_fragment.glsl",
-                        "D:\\msconlab\\Qt-GL-Simple-Scene-master\\constraintproj_geometry.glsl");
+    shader = new Shader();
+    shader->load(":/constraintproj_vertex",
+                        ":/constraintproj_fragment",
+                        ":/constraintproj_geometry");
 }
 
 void ConstraintProjection::allowedDraw(glm::mat4 projection, glm::mat4 modelview)
@@ -165,6 +166,8 @@ void ConstraintProjection::finish()
     for(auto pointId : pointIds){
         topology->removeConstraintProjPoint(pointId);
     }
+    pointIds.clear();
+
 }
 
 bool ConstraintProjection::isEnabled()

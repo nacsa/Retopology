@@ -134,6 +134,7 @@ public:
     void testEdgeBorder(unsigned int edgeId);
     void addTriangle(TopologyHelperTriangle triangle);
     void addTriangle(unsigned int edgeId, unsigned int pointId1, unsigned int pointId2, unsigned int pointId3);
+    void addTriangleFromModel(unsigned int edgeId1, unsigned int edgeId2, unsigned int edgeId3, unsigned int pointId1, unsigned int pointId2, unsigned int pointId3);
     void removeTriangle(unsigned int id, unsigned int edgeId);
     bool addQuad(TopologyHelperQuad quad);
     bool addQuad(unsigned int edgeId1, unsigned int pointId1, unsigned int pointId2, unsigned int pointId3, unsigned int pointId4);

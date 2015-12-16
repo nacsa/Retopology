@@ -14,6 +14,7 @@ enum UserToolState{
     MANIP_SCALE,
     ADD_POINT,
     ADD_POINT_CHAIN,
+    MOVE_POINT,
     ADD_EDGE,
     EXTRUDE_EDGE,
     DIVIDE_EDGE,

@@ -86,7 +86,6 @@ void VertexIsland::updateIslandScaling()
    glm::mat4 translateMatrix = glm::translate(modelMatrix, -center);
 
     for(unsigned int vertexId : vertexIds){
-        //TopologyPoint point = topology->newPoints[topology->pointIdToIndex(vertexId)];
         //glm::vec3 newPos = glm::vec3(translateMatrix * glm::vec4(point.getPosition()-center, 1));
         glm::vec3 newPos =  glm::vec3(translateMatrix * glm::vec4(startVertexPositionMap[vertexId], 1));
         topology->movePoint(vertexId, newPos.x, newPos.y, newPos.z);

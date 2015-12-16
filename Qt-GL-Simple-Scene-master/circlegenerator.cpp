@@ -69,15 +69,11 @@ void CircleGenerator::init(GLuint vaoHandle)
 {
     this->vaoHandle = vaoHandle;
 
-
-    shader = new Shader("D:\\msconlab\\Qt-GL-Simple-Scene-master\\circle_vertex.glsl",
-                                "D:\\msconlab\\Qt-GL-Simple-Scene-master\\circle_fragment.glsl");
-
+    shader = new Shader();
+    shader->load(":/circle_vertex", ":/circle_fragment");
 
     bindCoordinates();
     bindBufferData();
-
-
 }
 
 void CircleGenerator::draw(glm::mat4 projection, glm::mat4 modelview, glm::vec3 color)

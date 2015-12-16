@@ -53,7 +53,7 @@ void SimpleScene::initScene()
     normalmatrix = glm::mat3(modelview._inverse());
     rotationMatrix = glm::mat4(1.0);
     lightPosition = glm::vec3(0.0, 1.0, 19.0);
-
+/*
     altshader = new Shader("D:\\msconlab\\Qt-GL-Simple-Scene-master\\vertex.glsl",
                            "D:\\msconlab\\Qt-GL-Simple-Scene-master\\fragment.glsl");
     newpoint_shader = new Shader("D:\\msconlab\\Qt-GL-Simple-Scene-master\\newpoint_vertex.glsl",
@@ -87,7 +87,55 @@ void SimpleScene::initScene()
     similarModelProjectionNormal_shader = new Shader("D:\\msconlab\\Qt-GL-Simple-Scene-master\\similarmodelnormproj_vertex.glsl",
                                 "D:\\msconlab\\Qt-GL-Simple-Scene-master\\similarmodelnormproj_fragment.glsl");
 
+*/
+    timer.start();
+    altshader = new Shader();
+    altshader->load(":/vertex",
+                    ":/fragment");
+    newpoint_shader = new Shader();
+    newpoint_shader->load(":/newpoint_vertex",
+                          ":/newpoint_fragment");
 
+    topology_shader = new Shader();
+    topology_shader->load(":/color_vertex",
+                          ":/color_fragment",
+                          ":/color_geometry");
+
+    pointid_shader = new Shader();
+    pointid_shader->load(":/pointid_vertex",
+                         ":/pointid_fragment");
+    edgeid_shader = new Shader();
+    edgeid_shader->load(":/edgeid_vertex",
+                        ":/edgeid_fragment");
+    pointnormal_shader = new Shader();
+    pointnormal_shader->load(":/pointnormal_vertex",
+                             ":/pointnormal_fragment");
+    edge_shader = new Shader();
+    edge_shader->load(":/edge_vertex",
+                      ":/edge_fragment");
+    quad_shader = new Shader();
+    quad_shader->load(":/quad_vertex",
+                      ":/quad_fragment");
+    triangle_shader = new Shader();
+    triangle_shader->load(":/triangle_vertex",
+                          ":/triangle_fragment");
+    triangleid_shader = new Shader();
+    triangleid_shader->load(":/triangleid_vertex",
+                            ":/triangleid_fragment");
+
+    cylinderProjection_shader = new Shader();
+    cylinderProjection_shader->load(":/cylinderproj_vertex",
+                                ":/cylinderproj_fragment",
+                                ":/cylinderproj_geometry");
+    similarModelProjectionPosition_shader = new Shader();
+    similarModelProjectionPosition_shader->load(":/similarmodelposproj_vertex",
+                                ":/similarmodelposproj_fragment");
+
+    similarModelProjectionNormal_shader = new Shader();
+    similarModelProjectionNormal_shader->load(":/similarmodelnormproj_vertex",
+                                ":/similarmodelnormproj_fragment");
+    timer.stop();
+    printf("shader load time: %f",timer.getElapsedTimeInMilliSec());
     //width = 890;
     //height = 800;
     zoomValue = 0;
@@ -247,6 +295,12 @@ void SimpleScene::importModel(const char *fileName)
     updateTriangleBuffers();
     updateQuadBuffers();
 
+}
+
+void SimpleScene::exportModel(const char *fileName)
+{
+    ModelToRetopo modelToRetopo;
+    modelToRetopo.exportRetopoAsModel(fileName, &topology);
 }
 
 void SimpleScene::update(float t)
@@ -497,8 +551,28 @@ void SimpleScene::makeNewPoint(int x, int y){
 
 }
 
+void SimpleScene::setActivePoint(std::set<unsigned int> pointIds)
+{
+    topology.clearActivePoint();
+    addActivePoint(pointIds);
+}
 
+void SimpleScene::unsetActivePoint(std::set<unsigned int> pointIds)
+{
+    for(auto pointId : pointIds){
+        topology.removeActivePoint(pointId);
+    }
+    updatePointBuffers();
+}
 
+void SimpleScene::addActivePoint(std::set<unsigned int> pointIds)
+{
+    for(auto pointId : pointIds){
+        topology.addActivePoint(pointId);
+    }
+    updatePointBuffers();
+    updateEdgeBuffers();
+}
 
 bool SimpleScene::setActivePoint(int x, int y){
     int glY = height - y;
@@ -538,6 +612,28 @@ bool SimpleScene::addActivePoint(int x, int y)
         updateEdgeBuffers();
     }
     return true;
+}
+
+void SimpleScene::setActiveEdge(std::list<unsigned int> edgeIds)
+{
+    topology.clearActiveEdge();
+    addActiveEdge(edgeIds);
+}
+
+void SimpleScene::unsetActiveEdge(std::list<unsigned int> edgeIds)
+{
+    for(auto edgeId : edgeIds){
+        topology.removeActiveEdge(edgeId);
+    }
+    updateEdgeBuffers();
+}
+
+void SimpleScene::addActiveEdge(std::list<unsigned int> edgeIds)
+{
+    for(auto edgeId : edgeIds){
+        topology.addActiveEdge(edgeId);
+    }
+    updateEdgeBuffers();
 }
 
 bool SimpleScene::setActiveEdge(int x, int y)
@@ -584,6 +680,16 @@ bool SimpleScene::addActiveEdge(int x, int y)
 
 }
 
+void SimpleScene::addEdgeTool(int x, int y)
+{
+    int glY = height - y;
+    if(topology.activePoints.empty()){
+        setActivePoint(x, y);
+    }else{
+        makeEdgeBeetweenPoints(x, glY);
+    }
+}
+
 void SimpleScene::makeEdgeBeetweenPoints(int x, int y)
 {
     if(topology.activePoints.empty()){
@@ -605,6 +711,8 @@ void SimpleScene::makeEdgeBeetweenPoints(int x, int y)
     if(topology.testQuadration(edgeId)){
         //updateQuadBuffers();
     }
+    topology.clearActivePoint();
+    updatePointBuffers();
     updateTriangleBuffers();
     updateQuadBuffers();
     updateEdgeBuffers();
@@ -996,7 +1104,31 @@ void SimpleScene::moveExtrudablePoint(int x, int y)
 
 }
 
-void SimpleScene::selectPointIsland(int x, int y)
+void SimpleScene::setActivePointIsland(int x, int y)
+{
+    std::set<unsigned int> pointIds = selectPointIsland(x, y);
+    if(pointIds.size() != 0){
+        setActivePoint(pointIds);
+    }
+}
+
+void SimpleScene::unsetActivePointIsland(int x, int y)
+{
+    std::set<unsigned int> pointIds = selectPointIsland(x, y);
+    if(pointIds.size() != 0){
+        unsetActivePoint(pointIds);
+    }
+}
+
+void SimpleScene::addActivePointIsland(int x, int y)
+{
+    std::set<unsigned int> pointIds = selectPointIsland(x, y);
+    if(pointIds.size() != 0){
+        addActivePoint(pointIds);
+    }
+}
+
+std::set<unsigned int> SimpleScene::selectPointIsland(int x, int y)
 {
     int glY = height - y;
     unsigned int pointId = getSelectedPointId(x,glY);
@@ -1006,19 +1138,14 @@ void SimpleScene::selectPointIsland(int x, int y)
     }else{
         unsigned int edgeId = getSelectedEdgeId(x,glY);
         if(edgeId == 0){
-            return;
+            return std::set<unsigned int>();
         }
         TopologyEdge edge = topology.edges[topology.edgeIdToIndex(edgeId)];
         pointIslandSelectionPoints.clear();
         selectPointIslandAroundPoint(edge.pointId1);
     }
-    topology.clearActivePoint();
-    for(auto selectedPointId : pointIslandSelectionPoints){
-        topology.addActivePoint(selectedPointId);
-    }
 
-    updatePointBuffers();
-    updateEdgeBuffers();
+    return pointIslandSelectionPoints;
 }
 
 void SimpleScene::selectPointIslandAroundPoint(unsigned int pointId)
@@ -1040,22 +1167,38 @@ void SimpleScene::selectBorderEdges()
     updateEdgeBuffers();
 }
 
-void SimpleScene::selectBorderEdgeLine(int x, int y)
+void SimpleScene::setActiveBorderEdgeLine(int x, int y)
+{
+    std::list<unsigned int> edgeIds = selectBorderEdgeLine(x, y);
+    if(edgeIds.size() != 0){
+        setActiveEdge(edgeIds);
+    }
+}
+
+void SimpleScene::unsetActiveBorderEdgeLine(int x, int y)
+{
+    std::list<unsigned int> edgeIds = selectBorderEdgeLine(x, y);
+    if(edgeIds.size() != 0){
+        unsetActiveEdge(edgeIds);
+    }
+}
+
+void SimpleScene::addActiveBorderEdgeLine(int x, int y)
+{
+    std::list<unsigned int> edgeIds = selectBorderEdgeLine(x, y);
+    if(edgeIds.size() != 0){
+        addActiveEdge(edgeIds);
+    }
+}
+
+std::list<unsigned int> SimpleScene::selectBorderEdgeLine(int x, int y)
 {
     int glY = height - y;
     unsigned int edgeId = getSelectedEdgeId(x,glY);
     if(edgeId == 0)
-        return;
+        return std::list<unsigned int>();
 
-    topology.clearActiveEdge();
-    std::list<unsigned int> edges = topology.getBorderEdgeLine(edgeId);
-
-    for(std::list<unsigned int>::iterator i = edges.begin(); i != edges.end(); i++){
-        topology.addActiveEdge(*i);
-    }
-
-    updatePointBuffers();
-    updateEdgeBuffers();
+    return topology.getBorderEdgeLine(edgeId);
 }
 
 void SimpleScene::clearEdgeSelection()
@@ -1238,16 +1381,23 @@ void SimpleScene::setCylinderVertical(int n)
 
 void SimpleScene::startDrawingOnSurface(int x, int y)
 {
-    if(!drawing){
+    //if(!drawing){
         drawedPoints.clear();
         drawedBackFacePoints.clear();
-    }
+    //}
     drawing = true;
+    float startX = ((float)x/(float)width) * 2.0f - 1.0f;
+    float startY = ((float)(height-y)/(float)height) * 2.0f - 1.0f;
+
+    printf("** %f - %f",startX,startY);
+    cylinderGenerator.setLineStart(startX, startY, 1);
+    cylinderGenerator.setShouldDrawLine(true);
 }
 
 void SimpleScene::stopDrawingOnSurface(int x, int y)
 {
     drawing = false;
+    cylinderGenerator.setShouldDrawLine(false);
 }
 
 void SimpleScene::drawingOnSurface(int x, int y)
@@ -1255,8 +1405,11 @@ void SimpleScene::drawingOnSurface(int x, int y)
     int glY = height - y;
     float* pos = getPointPosition(x, glY);
 
-    drawedPoints.push_back(glm::vec3(pos[0], pos[1], pos[2]));
-    drawedBackFacePoints.push_back(getBackFacePointPosition(x, glY));
+    if(pos[3] > 0.5f){
+        drawedPoints.push_back(glm::vec3(pos[0], pos[1], pos[2]));
+        drawedBackFacePoints.push_back(getBackFacePointPosition(x, glY));
+    }
+    cylinderGenerator.setLineEnd((float)x/(float)width * 2.0 - 1.0, (float)(glY)/(float)height * 2.0 - 1.0, 1);
 }
 
 void SimpleScene::linearRegression()
@@ -1355,8 +1508,13 @@ void SimpleScene::rotateManipulatorStart(int x, int y)
 {
     isGizmoRotating = gizmoRotate->OnMouseDown(x, y);
     if(isGizmoRotating){
-        vertexIsland.resetVertexStartPositions();
+        //vertexIsland.resetVertexStartPositions();
     }
+}
+
+void SimpleScene::rotateManipulatorEnable()
+{
+    vertexIsland.resetVertexStartPositions();
 }
 
 void SimpleScene::rotateManipulatorMove(int x, int y)
@@ -1380,8 +1538,13 @@ void SimpleScene::scaleManipulatorStart(int x, int y)
 {
     isGizmoScaling = gizmoScale->OnMouseDown(x, y);
     if(isGizmoScaling){
-        vertexIsland.resetVertexStartPositions();
+        //vertexIsland.resetVertexStartPositions();
     }
+}
+
+void SimpleScene::scaleManipulatorEnable()
+{
+    vertexIsland.resetVertexStartPositions();
 }
 
 void SimpleScene::scaleManipulatorMove(int x, int y)
@@ -1403,7 +1566,7 @@ void SimpleScene::scaleManipulatorEnd(int x, int y)
 
 void SimpleScene::setShowMoveGizmo(bool show)
 {
-    showMoveGizmo = !showMoveGizmo;
+    showMoveGizmo = show;
     if(topology.activePoints.empty()){
         showMoveGizmo = false;
         return;
@@ -1420,9 +1583,9 @@ void SimpleScene::setShowMoveGizmo(bool show)
     }
 }
 
-void SimpleScene::switchShowRotateGizmo()
+void SimpleScene::switchShowRotateGizmo(bool show)
 {
-    showRotateGizmo = !showRotateGizmo;
+    showRotateGizmo = show;
     if(topology.activePoints.empty()){
         showRotateGizmo = false;
         return;
@@ -1439,9 +1602,9 @@ void SimpleScene::switchShowRotateGizmo()
     }
 }
 
-void SimpleScene::switchShowScaleGizmo()
+void SimpleScene::switchShowScaleGizmo(bool show)
 {
-    showScaleGizmo = !showScaleGizmo;
+    showScaleGizmo = show;
     if(topology.activePoints.empty()){
         showScaleGizmo = false;
         return;
@@ -1992,6 +2155,7 @@ void SimpleScene::render()
     }
 
     cylinderGenerator.allowedDraw(projection, modelview);
+    cylinderGenerator.allowedDrawLine();
     selectionRectangle.allowedDraw();
     constraintProjection.allowedDraw(projection, modelview);
     if(showMoveGizmo){

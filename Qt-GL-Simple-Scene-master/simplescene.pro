@@ -42,7 +42,8 @@ SOURCES += main.cpp \
     modeltoretopo.cpp \
     constraintprojection.cpp \
     constraintpoint.cpp \
-    MeshMorph.cpp
+    MeshMorph.cpp \
+    Timer.cpp
 
 
 HEADERS += \
@@ -88,10 +89,12 @@ HEADERS += \
     modeltoretopo.h \
     constraintprojection.h \
     constraintpoint.h \
-    MeshMorph.h
+    MeshMorph.h \
+    Timer.h
 
 RESOURCES += \
-    resources.qrc
+    resources.qrc\
+    shaders.qrc
 
 OTHER_FILES += \
     fragment.glsl \

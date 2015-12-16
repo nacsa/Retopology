@@ -116,8 +116,9 @@ void SelectionRectangle::init(GLuint vaoHandle)
     this->vaoHandle = vaoHandle;
 
 
-    shader = new Shader("D:\\msconlab\\Qt-GL-Simple-Scene-master\\selectrect_vertex.glsl",
-                                "D:\\msconlab\\Qt-GL-Simple-Scene-master\\selectrect_fragment.glsl");
+    shader = new Shader();
+    shader->load(":/selectrect_vertex",
+                 ":/selectrect_fragment");
 
 
     bindCoordinates();

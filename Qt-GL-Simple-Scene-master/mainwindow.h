@@ -25,6 +25,7 @@ signals:
 
 public slots:
     void sliderValueChanged(int value);
+    void setInfoLabelText(const char* text);
 protected:
 //    void contextMenuEvent(QContextMenuEvent *event);
 
@@ -76,6 +77,7 @@ private slots:
     //Simple toolbar
     void addPointButtonToggled();
     void addPointAutoButtonToggled();
+    void movePointButtonToggled();
     void addEdgeButtonToggled();
     void extrudeEdgeButtonToggled();
     void divideEdgeButtonToggled();
@@ -164,6 +166,7 @@ private:
     //Simple toolbar
     QToolButton* addPointButton;
     QToolButton* addPointAutoButton;
+    QToolButton* movePointButton;
     QToolButton* addEdgeButton;
     QToolButton* extrudeEdgeButton;
     QToolButton* divideEdgeButton;

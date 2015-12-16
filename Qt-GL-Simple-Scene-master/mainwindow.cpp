@@ -51,7 +51,7 @@ MainWindow::MainWindow(){
     createActions();
     createMenus();
 
-    QString message = tr("A context menu is available by right-clicking");
+    QString message = tr("This is the status bar. It can show useful information during the usage of the application.");
     statusBar()->showMessage(message);
 
 
@@ -62,21 +62,15 @@ MainWindow::MainWindow(){
 
 }
 
-
-
 void MainWindow::sliderValueChanged(int value)
 {
     glView->zoomSlide(value);
 }
 
-//void MainWindow::contextMenuEvent(QContextMenuEvent *event)
-//{
-//    QMenu menu(this);
-//    menu.addAction(cutAct);
-//    menu.addAction(copyAct);
-//    menu.addAction(pasteAct);
-//    menu.exec(event->globalPos());
-//}
+void MainWindow::setInfoLabelText(const char *text)
+{
+    infoLabel->setText(tr(text));
+}
 
 void MainWindow::newProject()
 {
@@ -126,6 +120,7 @@ void MainWindow::exportTopology()
                                                      tr("Obj (*.obj)"));
     if(fileName.isNull() || fileName.isEmpty())
         return;
+    glView->exportModel(fileName.toStdString().c_str());
 }
 
 void MainWindow::importTopology()
@@ -345,6 +340,13 @@ void MainWindow::addPointAutoButtonToggled()
     addPointHelperButton->setChecked(true);
     addPointHelperMenu->close();
     glView->changeState(UserToolState::ADD_POINT_CHAIN);
+}
+
+void MainWindow::movePointButtonToggled()
+{
+    toggleOffAllTools();
+    movePointButton->setChecked(true);
+    glView->changeState(UserToolState::MOVE_POINT);
 }
 
 void MainWindow::addEdgeButtonToggled()
@@ -567,7 +569,7 @@ void MainWindow::createMenus()
     fileMenu->addSeparator();
     fileMenu->addAction(exitAct);
 
-
+/*
     toolMenu = menuBar()->addMenu(tr("&Tool"));
     toolMenu->addAction(cylinderProjAct);
     toolMenu->addAction(linearRegAct);
@@ -580,11 +582,11 @@ void MainWindow::createMenus()
     editMenu->addAction(copyAct);
     editMenu->addAction(pasteAct);
     editMenu->addSeparator();
-
+*/
     helpMenu = menuBar()->addMenu(tr("&Help"));
     helpMenu->addAction(aboutAct);
     helpMenu->addAction(aboutQtAct);
-
+/*
     formatMenu = editMenu->addMenu(tr("&Format"));
     formatMenu->addAction(boldAct);
     formatMenu->addAction(italicAct);
@@ -596,6 +598,7 @@ void MainWindow::createMenus()
     formatMenu->addSeparator();
     formatMenu->addAction(setLineSpacingAct);
     formatMenu->addAction(setParagraphSpacingAct);
+*/
 }
 
 void MainWindow::createSimpleToolbar()
@@ -723,10 +726,10 @@ QWidget * MainWindow::createCommonActionToolbar()
 
     layoutinner->addWidget(selectPointHelperButton);
     layoutinner->addWidget(selectEdgeHelperButton);
-    layoutinner->addWidget(selectTriangleButton);
-    layoutinner->addWidget(selectQuadButton);
+    //layoutinner->addWidget(selectTriangleButton);
+    //layoutinner->addWidget(selectQuadButton);
     layoutinner->addWidget(separator);
-    layoutinner->addWidget(selectButton);
+    //layoutinner->addWidget(selectButton);
     layoutinner->addWidget(translateButton);
     layoutinner->addWidget(rotateButton);
     layoutinner->addWidget(scaleButton);
@@ -734,9 +737,9 @@ QWidget * MainWindow::createCommonActionToolbar()
     layoutinner->setDirection(QBoxLayout::LeftToRight);
     layoutinner->setAlignment(selectPointHelperButton, Qt::AlignLeft);
     layoutinner->setAlignment(selectEdgeHelperButton, Qt::AlignLeft);
-    layoutinner->setAlignment(selectTriangleButton, Qt::AlignLeft);
-    layoutinner->setAlignment(selectQuadButton, Qt::AlignLeft);
-    layoutinner->setAlignment(selectButton, Qt::AlignLeft);
+    //layoutinner->setAlignment(selectTriangleButton, Qt::AlignLeft);
+    //layoutinner->setAlignment(selectQuadButton, Qt::AlignLeft);
+    //layoutinner->setAlignment(selectButton, Qt::AlignLeft);
     layoutinner->setAlignment(translateButton, Qt::AlignLeft);
     layoutinner->setAlignment(rotateButton, Qt::AlignLeft);
     layoutinner->setAlignment(scaleButton, Qt::AlignLeft);
@@ -780,6 +783,12 @@ QWidget *MainWindow::createSimpleActionToolbar()
     addPointHelperButton->setMenu(addPointHelperMenu);
     addPointHelperButton->setPopupMode(QToolButton::InstantPopup);
 
+    //Point move
+    movePointButton = new QToolButton;
+    movePointButton->setCheckable(true);
+    movePointButton->setIcon(QIcon(":/pointMove"));
+    movePointButton->setToolTip(tr("Move point"));
+    connect(movePointButton, SIGNAL(clicked()), this, SLOT(movePointButtonToggled()));
 
     //Edge add
     addEdgeButton = new QToolButton;
@@ -837,6 +846,7 @@ QWidget *MainWindow::createSimpleActionToolbar()
 
 
     layoutinner->addWidget(addPointHelperButton);
+    layoutinner->addWidget(movePointButton);
     layoutinner->addWidget(addEdgeButton);
     layoutinner->addWidget(extrudeEdgeButton);
     layoutinner->addWidget(divideEdgeButton);
@@ -844,6 +854,7 @@ QWidget *MainWindow::createSimpleActionToolbar()
     layoutinner->setStretchFactor(divideTriangleButton,1);
     layoutinner->setDirection(QBoxLayout::TopToBottom);
     layoutinner->setAlignment(addPointHelperButton, Qt::AlignTop);
+    layoutinner->setAlignment(movePointButton, Qt::AlignTop);
     layoutinner->setAlignment(addEdgeButton, Qt::AlignTop);
     layoutinner->setAlignment(extrudeEdgeButton, Qt::AlignTop);
     layoutinner->setAlignment(divideTriangleButton, Qt::AlignTop);
@@ -927,6 +938,7 @@ void MainWindow::toggleOffSimpleTools()
 {
     addPointButton->setChecked(false);
     addPointAutoButton->setChecked(false);
+    movePointButton->setChecked(false);
     addEdgeButton->setChecked(false);
     extrudeEdgeButton->setChecked(false);
     divideEdgeButton->setChecked(false);

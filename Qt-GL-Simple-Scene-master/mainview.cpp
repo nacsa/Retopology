@@ -38,6 +38,7 @@ MainView::MainView(const QGLFormat & format, QWidget *parent) : QGLWidget(format
     this->setMouseTracking(true);
 
     constraintProjState = ConstraintProjState::MAKE_CONSTRAINTS;
+    cylinderProjState = CylinderProjState::NONE;
 }
 
 void MainView::zoomSlide(int zoom){
@@ -105,7 +106,14 @@ void MainView::mousePressEvent(QMouseEvent *event){
              }
              break;
          case SELECT_POINT_ISLAND:
-              scene->selectPointIsland(event->pos().x(), event->pos().y());
+             if(shiftDown){
+                scene->addActivePointIsland(event->pos().x(), event->pos().y());
+             }else if(altDown){
+                scene->unsetActivePointIsland(event->pos().x(), event->pos().y());
+             }else{
+                 scene->setActivePointIsland(event->pos().x(), event->pos().y());
+             }
+              //scene->selectPointIsland(event->pos().x(), event->pos().y());
               //TODO: megoldani hogy shift cuccok menjenek
               break;
          case SELECT_EDGE:
@@ -117,8 +125,14 @@ void MainView::mousePressEvent(QMouseEvent *event){
                 scene->setActiveEdge(event->pos().x(), event->pos().y());
              }
              break;
-         case SELECT_BORDER_EDGES:
-             scene->selectBorderEdgeLine(event->pos().x(), event->pos().y());
+         case SELECT_BORDER_EDGES:if(shiftDown){
+                 scene->addActiveBorderEdgeLine(event->pos().x(), event->pos().y());
+              }else if(altDown){
+                 scene->unsetActiveBorderEdgeLine(event->pos().x(), event->pos().y());
+              }else{
+                 scene->setActiveBorderEdgeLine(event->pos().x(), event->pos().y());
+              }
+             //scene->selectBorderEdgeLine(event->pos().x(), event->pos().y());
              //TODO: megoldani hogy shift cuccok menjenek
              break;
          case ADD_POINT:
@@ -127,6 +141,14 @@ void MainView::mousePressEvent(QMouseEvent *event){
              break;
          case ADD_POINT_CHAIN:
              scene->makeNewPoint(event->pos().x(), event->pos().y());
+             break;
+         case MOVE_POINT:
+             if(scene->setActivePoint(event->pos().x(), event->pos().y())){
+                 isMovingPoint = true;
+             }
+             break;
+         case ADD_EDGE:
+             scene->addEdgeTool(event->pos().x(), event->pos().y());
              break;
          case EXTRUDE_EDGE:
              extrudeProcess = true;scene->tmpExtrudeFirstTriangle(event->pos().x(), event->pos().y());//scene->extrudeEdge(event->pos().x(), event->pos().y());
@@ -138,9 +160,22 @@ void MainView::mousePressEvent(QMouseEvent *event){
              scene->divideTriangle(event->pos().x(), event->pos().y());
              break;
          case CYLINDER_PROJECTION:
-             isDrawing = true;
-             scene->startDrawingOnSurface(event->pos().x(), event->pos().y());
-             if(isRadiusSelection){
+             if(cylinderProjState == CylinderProjState::NONE){
+                 cylinderProjState = CylinderProjState::DRAW_LINE;
+                 scene->startDrawingOnSurface(event->pos().x(), event->pos().y());
+             }
+             if(cylinderProjState == CylinderProjState::RADIUS_SELECTION){
+                 cylinderProjState = CylinderProjState::HORIZONTAL_SELECTION;
+                 selectionBuffer = 0;
+             }else if(cylinderProjState == CylinderProjState::HORIZONTAL_SELECTION){
+                 cylinderProjState = CylinderProjState::VERTICAL_SELECTION;
+                 selectionBuffer = 0;
+             }else if(cylinderProjState == CylinderProjState::VERTICAL_SELECTION){
+                 cylinderProjState = CylinderProjState::NONE;
+                 selectionBuffer = 0;
+                 scene->projectTMPCylinderViaShader();
+             }
+             /*if(isRadiusSelection){
                  isRadiusSelection = false;
                  isHorizontalSelection = true;
                  selectionBuffer = 0;
@@ -152,7 +187,7 @@ void MainView::mousePressEvent(QMouseEvent *event){
                  isVerticalSelection = false;
                  selectionBuffer = 0;
                  scene->projectTMPCylinderViaShader();
-             }
+             }*/
              break;
          case CONSTRAINT_PROJECTION:
              scene->constaintProjection(event->pos().x(), event->pos().y());
@@ -247,24 +282,35 @@ void MainView::mouseReleaseEvent(QMouseEvent *event){
         isMovingPoint = false;
         //toggleAnimation();
     }else if(event->button() == Qt::LeftButton){
+        isMovingPoint = false;
         if(extrudeProcess){
             extrudeProcess = false;
             scene->stopExtrude();
         }
-        if(isDrawing){
-            isDrawing = false;
+        if(cylinderProjState == CylinderProjState::DRAW_LINE){
             scene->stopDrawingOnSurface(event->pos().x(), event->pos().y());
             scene->linearRegression();
-            isRadiusSelection = true;
+            cylinderProjState = CylinderProjState::RADIUS_SELECTION;
         }
         if(isRectSelecting){
             isRectSelecting = false;
             scene->stopRectangleSelection(event->pos().x(), event->pos().y());
             updateGL();
         }else{
+          //  scene->moveManipulatorEnd(event->pos().x(), event->pos().y());
+          //  scene->rotateManipulatorEnd(event->pos().x(), event->pos().y());
+          //  scene->scaleManipulatorEnd(event->pos().x(), event->pos().y());
+        }
+        switch(currentToolState){
+        case MANIP_TRANSLATE:
             scene->moveManipulatorEnd(event->pos().x(), event->pos().y());
+            break;
+        case MANIP_ROTATE:
             scene->rotateManipulatorEnd(event->pos().x(), event->pos().y());
+            break;
+        case MANIP_SCALE:
             scene->scaleManipulatorEnd(event->pos().x(), event->pos().y());
+            break;
         }
     }
 }
@@ -324,15 +370,15 @@ void MainView::mouseMoveEvent(QMouseEvent *event){
        scene->moveExtrudablePoint(event->pos().x(), event->pos().y());
        updateGL();
 
-   }else if(isDrawing){
+   }else if(cylinderProjState == CylinderProjState::DRAW_LINE){
         scene->drawingOnSurface(event->pos().x(), event->pos().y());
    }else if(isRectSelecting){
        scene->rectangleSelection(event->pos().x(), event->pos().y());
        updateGL();
-   }else if(isRadiusSelection){
+   }else if(cylinderProjState == CylinderProjState::RADIUS_SELECTION){
         scene->setCylinderRadius(x-oldMousePosX);
         updateGL();
-   }else if(isHorizontalSelection){
+   }else if(cylinderProjState == CylinderProjState::HORIZONTAL_SELECTION){
        selectionBuffer += x-oldMousePosX;
        if(selectionBuffer > 0.1){
            selectionBuffer = 0;
@@ -342,7 +388,7 @@ void MainView::mouseMoveEvent(QMouseEvent *event){
            scene->setCylinderHorizontal(-1);
        }
        updateGL();
-   }else if(isVerticalSelection){
+   }else if(cylinderProjState == CylinderProjState::VERTICAL_SELECTION){
        selectionBuffer += x-oldMousePosX;
        if(selectionBuffer > 0.1){
            selectionBuffer = 0;
@@ -382,6 +428,7 @@ void MainView::keyPressEvent(QKeyEvent *event){
                 constraintProjState = ConstraintProjState::APPLIED;
             }else if(constraintProjState == ConstraintProjState::APPLIED){
                 scene->finishConstaintProjection();
+                constraintProjState = ConstraintProjState::MAKE_CONSTRAINTS;
             }
             updateGL();
         }else if(event->key()== Qt::Key_Escape){
@@ -391,7 +438,23 @@ void MainView::keyPressEvent(QKeyEvent *event){
             }
             updateGL();
         }
+    }else if(currentToolState == UserToolState::CYLINDER_PROJECTION){
+        if(event->key()== Qt::Key_Escape){
+            if(cylinderProjState == CylinderProjState::RADIUS_SELECTION){
+                cylinderProjState = CylinderProjState::NONE;
+                selectionBuffer = 0;
+            }else if(cylinderProjState == CylinderProjState::HORIZONTAL_SELECTION){
+                cylinderProjState = CylinderProjState::RADIUS_SELECTION;
+                selectionBuffer = 0;
+            }else if(cylinderProjState == CylinderProjState::VERTICAL_SELECTION){
+                cylinderProjState = CylinderProjState::HORIZONTAL_SELECTION;
+                selectionBuffer = 0;
+            }
+        }
+        updateGL();
     }
+
+
     if(event->key()==Qt::Key_Control){
         ctrlDown = true;
     }else if(event->key() == Qt::Key_Alt){
@@ -429,13 +492,13 @@ void MainView::keyPressEvent(QKeyEvent *event){
     }else if(event->key() == Qt::Key_I){
         iDown = true;
     }else if(event->key() == Qt::Key_A){
-       scene->setShowMoveGizmo(false);
+       //scene->setShowMoveGizmo(false);
        updateGL();
     }else if(event->key() == Qt::Key_Y){
-        scene->switchShowRotateGizmo();
+        //scene->switchShowRotateGizmo();
         updateGL();
      }else if(event->key() == Qt::Key_X){
-        scene->switchShowScaleGizmo();
+        //scene->switchShowScaleGizmo();
         updateGL();
      }
 }
@@ -527,6 +590,11 @@ void MainView::importModel(const char *fileName)
     updateGL();
 }
 
+void MainView::exportModel(const char *fileName)
+{
+    scene->exportModel(fileName);
+}
+
 void MainView::cylinderProj()
 {
     //scene->projectTMPCylinder();
@@ -554,17 +622,24 @@ void MainView::constraintProjection()
 void MainView::changeState(UserToolState state)
 {
     currentToolState = state;
-    switch(currentToolState){
-    case MANIP_TRANSLATE:
+    if(currentToolState == UserToolState::MANIP_TRANSLATE){
+        scene->setShowMoveGizmo(true);
+    }else{
         scene->setShowMoveGizmo(false);
-        break;
-    case MANIP_ROTATE:
-        scene->switchShowRotateGizmo();
-        break;
-    case MANIP_SCALE:
-        scene->switchShowScaleGizmo();
-        break;
     }
+    if(currentToolState == UserToolState::MANIP_ROTATE){
+        scene->switchShowRotateGizmo(true);
+        scene->rotateManipulatorEnable();
+    }else{
+        scene->switchShowRotateGizmo(false);
+    }
+    if(currentToolState == UserToolState::MANIP_SCALE){
+        scene->switchShowScaleGizmo(true);
+        scene->scaleManipulatorEnable();
+    }else{
+        scene->switchShowScaleGizmo(false);
+    }
+    updateGL();
 }
 
 void MainView::timerUpdate()

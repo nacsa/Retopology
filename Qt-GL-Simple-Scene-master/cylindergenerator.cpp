@@ -1,9 +1,12 @@
 #include "cylindergenerator.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include <qfile.h>
+#include <qresource.h>
 
 CylinderGenerator::CylinderGenerator()
 {
     shouldDraw = false;
+    shouldDrawLine = false;
     updateVerticalLines = true;
     verticalGridSize = 40;
     horizontalGridSize = 4;
@@ -23,11 +26,20 @@ CylinderGenerator::CylinderGenerator()
 void CylinderGenerator::init(CircleGenerator *CircleGenerator, GLuint vaoHandle)
 {
     this->circle = CircleGenerator;
+    this->vaoHandle = vaoHandle;
     //glGenVertexArrays(1, vaoHandle);
 
-    shader = new Shader("D:\\msconlab\\Qt-GL-Simple-Scene-master\\circle_vertex.glsl",
-                                "D:\\msconlab\\Qt-GL-Simple-Scene-master\\circle_fragment.glsl");
+    shader = new Shader();
+    shader->load(":/circle_vertex",
+                 ":/circle_fragment");
 
+    //lineShader = new Shader("D:\\msconlab\\Qt-GL-Simple-Scene-master\\selectrect_vertex.glsl",
+    //                            "D:\\msconlab\\Qt-GL-Simple-Scene-master\\selectrect_fragment.glsl");
+    //lineShader = new Shader(QResource(":/selectrect_vertex").absoluteFilePath().toLatin1().data(),
+    //                        QResource("qrc:///shaders/selectrect_fragment.glsl").absoluteFilePath().toLatin1().data());
+    lineShader = new Shader();
+    lineShader->load(":/selectrect_vertex",
+                           ":/selectrect_fragment");
 
     bindCoordinates();
     bindBufferData();
@@ -85,6 +97,16 @@ void CylinderGenerator::allowedDraw(glm::mat4 projection, glm::mat4 modelview)
     }
 }
 
+void CylinderGenerator::setShouldDrawLine(bool shouldDrawLine)
+{
+    this->shouldDrawLine = shouldDrawLine;
+}
+
+bool CylinderGenerator::isShouldDrawLine()
+{
+    return shouldDrawLine;
+}
+
 void CylinderGenerator::setShouldDraw(bool shouldDraw)
 {
     this->shouldDraw = shouldDraw;
@@ -93,6 +115,66 @@ void CylinderGenerator::setShouldDraw(bool shouldDraw)
 bool CylinderGenerator::isShouldDraw()
 {
     return shouldDraw;
+}
+
+void CylinderGenerator::setLineStart(float x, float y, float z)
+{
+    lineVertices[0] = x;
+    lineVertices[1] = y;
+    lineVertices[2] = z;
+    lineVertices[3] = x;
+    lineVertices[4] = y;
+    lineVertices[5] = z;
+    bindLineBufferData();
+}
+
+void CylinderGenerator::setLineEnd(float x, float y, float z)
+{
+    lineVertices[3] = x;
+    lineVertices[4] = y;
+    lineVertices[5] = z;
+    bindLineBufferData();
+}
+
+void CylinderGenerator::drawLine()
+{
+    lineShader->enable();
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBindVertexArray(vaoHandle);
+    glLineWidth(3);
+    glDrawArrays(GL_LINES, 0, 2 * 3);
+    glDisable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glBindVertexArray(0);
+    lineShader->disable();
+}
+
+void CylinderGenerator::allowedDrawLine()
+{
+    if(shouldDrawLine){
+        drawLine();
+    }
+}
+
+void CylinderGenerator::bindLineBufferData()
+{
+    GLuint vertexSize = 3 * sizeof(GLfloat);
+    glBindVertexArray(vaoHandle);
+
+    if(vertexBuffer == 0)
+        glGenBuffers(1, &vertexBuffer);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, 2 * 3 * sizeof(float), lineVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0); //pos
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertexSize, 0);
+
+    glBindVertexArray(0);
 }
 
 void CylinderGenerator::bindBufferData()
